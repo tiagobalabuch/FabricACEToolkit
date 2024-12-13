@@ -3,7 +3,7 @@
 Logs messages with different severity levels to the console and optionally to a file.
 
 .DESCRIPTION
-The `Write-Log` function provides a unified way to log messages with levels such as Info, Error, Alert, Verbose, and Debug.
+The `Write-Message` function provides a unified way to log messages with levels such as Info, Error, Alert, Verbose, and Debug.
 It supports logging to the console with color-coded messages and optionally writing logs to a file with timestamps.
 
 .PARAMETER Message
@@ -16,17 +16,17 @@ Specifies the log level. Supported values are Info, Error, Alert, Verbose, and D
 (Optional) Specifies a file path to write the log messages to. If not provided, messages are only written to the console.
 
 .EXAMPLE
-Write-Log -Message "This is an info message." -Level Info
+Write-Message -Message "This is an info message." -Level Info
 
 Logs an informational message to the console.
 
 .EXAMPLE
-Write-Log -Message "Logging to file." -Level Info -LogFile "C:\Logs\MyLog.txt"
+Write-Message -Message "Logging to file." -Level Info -LogFile "C:\Logs\MyLog.txt"
 
 Logs an informational message to the console and writes it to a file.
 
 .EXAMPLE
-"Pipeline message" | Write-Log -Level Alert
+"Pipeline message" | Write-Message -Level Alert
 
 Logs a message from the pipeline with an Alert level.
 
@@ -35,14 +35,14 @@ Author: Tiago Balabuch
 Date: 2024-12-12
 #>
 
-function Write-Log {
+function Write-Message {
     [CmdletBinding()]
     param (
         [Parameter(Mandatory, ValueFromPipeline)]
         [string]$Message,
 
         [Parameter()]
-        [ValidateSet("Message","Info", "Error", "Alert", "Verbose", "Debug", IgnoreCase = $true)]
+        [ValidateSet("Message","Info", "Error", "Warning","Critical", "Verbose", "Debug", IgnoreCase = $true)]
         [string]$Level = "Info",
 
         [Parameter()]

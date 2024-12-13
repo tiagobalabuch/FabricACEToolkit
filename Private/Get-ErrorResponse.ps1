@@ -108,6 +108,6 @@ try {
 catch {
     #$_.Exception
     $errorDetails = Get-ErrorResponse($_.Exception)# | Get-ErrorResponse
-    Write-Log -Message  "Error Details: $errorDetails" -Level Error
+    Write-Message -Message  "Error Details: $errorDetails" -Level Error
     
 }#>
