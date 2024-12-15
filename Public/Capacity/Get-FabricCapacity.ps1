@@ -58,11 +58,11 @@ function Get-FabricCapacity {
         Is-TokenExpired
 
         # Construct the API URL
-        $getCapacityUrl = "{0}/capacities" -f $FabricConfig.BaseUrl
-        Write-Message -Message "API Endpoint: $getCapacityUrl" -Level Info
+        $apiEndpointUrl = "{0}/capacities" -f $FabricConfig.BaseUrl
+        Write-Message -Message "API Endpoint: $apiEndpointUrl" -Level Info
 
         # Make the API request
-        $response = Invoke-WebRequest -Headers $FabricConfig.FabricHeaders -Uri $getCapacityUrl -Method Get -ErrorAction Stop
+        $response = Invoke-WebRequest -Headers $FabricConfig.FabricHeaders -Uri $apiEndpointUrl -Method Get -ErrorAction Stop
 
         # Validate and parse the response
         if (-not $response.Content) {
@@ -71,7 +71,7 @@ function Get-FabricCapacity {
         }
         
         $responseCode = $response.StatusCode
-        Write-Message -Message "Response Code: $responseCode" -Level Info
+        #Write-Message -Message "Response Code: $responseCode" -Level Info
         
         $data = $response.Content | ConvertFrom-Json
 

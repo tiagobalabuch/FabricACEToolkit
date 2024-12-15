@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-Retrieves details of a Fabric workspace by its ID or name.
+Retrieves details of a Microsoft Fabric workspace by its ID or name.
 
 .DESCRIPTION
 The `Get-FabricWorkspace` function fetches workspace details from the Fabric API. It supports filtering by WorkspaceId or WorkspaceName.
@@ -53,11 +53,11 @@ function Get-FabricWorkspace {
         Is-TokenExpired
 
         # Construct the API URL
-        $getWorkspaceUrl = "{0}/workspaces" -f $FabricConfig.BaseUrl
-        Write-Message -Message "API Endpoint: $getWorkspaceUrl" -Level Info
+        $apiEndpointUrl = "{0}/workspaces" -f $FabricConfig.BaseUrl
+        Write-Message -Message "API Endpoint: $apiEndpointUrl" -Level Info
 
         # Make the API request
-        $response = Invoke-WebRequest -Headers $FabricConfig.FabricHeaders -Uri $getWorkspaceUrl -Method Get -ErrorAction Stop
+        $response = Invoke-WebRequest -Headers $FabricConfig.FabricHeaders -Uri $apiEndpointUrl -Method Get -ErrorAction Stop
 
         # Validate the response
         if (-not $response.Content) {
@@ -66,7 +66,8 @@ function Get-FabricWorkspace {
         }
 
         $responseCode = $response.StatusCode
-        Write-Message -Message "Response Code: $responseCode" -Level Info
+        #Debug
+        #Write-Message -Message "Response Code: $responseCode" -Level Info
 
         if ($responseCode -eq 200) {
             # Parse the response
@@ -86,7 +87,6 @@ function Get-FabricWorkspace {
             }
 
             if ($workspace) {
-                Write-Message -Message "Workspace matching the criteria found." -Level Info
                 return $workspace
             }
             else {
@@ -103,6 +103,6 @@ function Get-FabricWorkspace {
         # Handle and log errors
         $errorDetails = Get-ErrorResponse($_.Exception)
         Write-Message -Message "Failed to retrieve workspace. Error: $errorDetails" -Level Error
-        throw "Error retrieving workspace details: $errorDetails"
+        #throw "Error retrieving workspace details: $errorDetails"
     }
 }

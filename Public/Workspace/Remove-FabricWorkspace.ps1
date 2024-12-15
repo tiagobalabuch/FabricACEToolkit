@@ -36,20 +36,20 @@ function Remove-FabricWorkspace {
         Is-TokenExpired
 
         # Construct the API URL
-        $deleteWorkspaceUrl = "{0}/workspaces/{1}" -f $FabricConfig.BaseUrl, $WorkspaceId
-        Write-Message -Message "API Endpoint: $deleteWorkspaceUrl" -Level Info
+        $apiEndpointUrl = "{0}/workspaces/{1}" -f $FabricConfig.BaseUrl, $WorkspaceId
+        Write-Message -Message "API Endpoint: $apiEndpointUrl" -Level Info
 
         # Make the API request
-        $response = Invoke-WebRequest -Headers $FabricConfig.FabricHeaders -Uri $deleteWorkspaceUrl -Method Delete -ErrorAction Stop
+        $response = Invoke-WebRequest -Headers $FabricConfig.FabricHeaders -Uri $apiEndpointUrl -Method Delete -ErrorAction Stop
 
         # Parse and log the response
         $responseCode = $response.StatusCode
-        Write-Message -Message "Response Code: $responseCode" -Level Info
+        #Write-Message -Message "Response Code: $responseCode" -Level Info
 
         if ($responseCode -eq 200) {
             # Handle successful deletion
             Write-Message -Message "Workspace '$WorkspaceId' deleted successfully!" -Level Info
-            return @()
+            return $null
         }
         else {
             # Log unexpected response codes

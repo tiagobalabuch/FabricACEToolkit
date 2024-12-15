@@ -35,7 +35,7 @@ function Is-TokenExpired {
         if ([string]::IsNullOrWhiteSpace($FabricConfig.TenantIdGlobal) -or 
             [string]::IsNullOrWhiteSpace($FabricConfig.TokenExpiresOn)) {
             Write-Message -Message "Token details are missing. Please run 'Set-FabricHeaders' to configure them." -Level Error
-            exit #"ConfigurationException: Missing token details in the FabricConfig object."
+            throw #"ConfigurationException: Missing token details in the FabricConfig object."
         }
 
         # Convert the TokenExpiresOn value to a DateTime object
@@ -52,10 +52,10 @@ function Is-TokenExpired {
         #Write-Message -Message "Token is still valid. Expiry time: $($tokenExpiryDate.ToString("u"))" -Level Info
     } catch [System.FormatException] {
         Write-Message -Message "Invalid 'TokenExpiresOn' format in the FabricConfig object. Ensure it is a valid datetime string." -Level Error
-        exit # "FormatException: Invalid TokenExpiresOn value."
+        throw "FormatException: Invalid TokenExpiresOn value."
     } catch {
         # Log unexpected errors with details
         Write-Message -Message "An unexpected error occurred: $_" -Level Error
-        exit #throw $_
+        throw $_
     }
 }

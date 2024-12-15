@@ -36,27 +36,26 @@ function Add-FabricWorkspace {
         Is-TokenExpired
         
         # Construct the API URL
-        $getWorkspaceUrl = "{0}/workspaces" -f $FabricConfig.BaseUrl
-        Write-Message -Message "API Endpoint: $getWorkspaceUrl" -Level Info
+        $apiEndpointUrl = "{0}/workspaces" -f $FabricConfig.BaseUrl
+        Write-Message -Message "API Endpoint: $apiEndpointUrl" -Level Info
 
         # Define the workspace body
-        $workspaceBody = @{
+        $body = @{
             displayName = $WorkspaceName
         }
 
         # Convert the body to JSON
-        $workspaceBodyJson = $workspaceBody | ConvertTo-Json
+        $bodyJson = $body | ConvertTo-Json
         
-        Write-Message -Message "Request Body: $workspaceBodyJson" -Level Info
+        #Write-Message -Message "Request Body: $bodyJson" -Level Info
 
         # Make the API request
-        $response = Invoke-WebRequest -Headers $FabricConfig.FabricHeaders -Uri $getWorkspaceUrl -Method Post -Body $workspaceBodyJson -ContentType "application/json" -ErrorAction Stop
+        $response = Invoke-WebRequest -Headers $FabricConfig.FabricHeaders -Uri $apiEndpointUrl -Method Post -Body $bodyJson -ContentType "application/json" -ErrorAction Stop
 
         # Parse and log the response
         $responseCode = $response.StatusCode
-        #Debug
+
         #Write-Message -Message "Response Code: $responseCode" -Level Info
-        #Write-Message -Message "Request Body: $workspaceBodyJson" -Level Info
         
         $data = $response.Content | ConvertFrom-Json
 
