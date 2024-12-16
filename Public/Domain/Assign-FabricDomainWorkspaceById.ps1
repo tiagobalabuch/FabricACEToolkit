@@ -37,7 +37,7 @@ function Assign-FabricDomainWorkspaceById {
     )
 
     try {
-        # Ensure token validity
+        # Ensure the API token is valid
         Is-TokenExpired
 
         # Construct the API URL

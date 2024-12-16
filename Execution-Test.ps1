@@ -2,7 +2,7 @@
 Import-Module Az.Account
 Set-ExecutionPolicy Unrestricted -Scope CurrentUser
 Import-Module .\FabricACEToolkit -Force
-Get-Command -Module FabricACEToolkit
+Get-Command -Module FabricACEToolkit 
 
 Set-FabricHeaders -tenantId "2ca1a04f-621b-4a1f-bad6-7ecd3ae78e25"
 
@@ -100,14 +100,39 @@ $bodyJson
 Invoke-WebRequest -Headers $FabricConfig.FabricHeaders -Uri "https://api.fabric.microsoft.com/v1/admin/domains/2bf5d714-4dd4-44fb-b76e-10a0ff3dbcbe/assignWorkspacesByPrincipals" -Method Post -Body $bodyJson -ContentType "application/json" -ErrorAction Stop
 
 
-$PrincipalIds = @{
-    principals = @( @{
-        id = "813abb4a-414c-4ac0-9c2c-bd17036fd58c"
-    })
-}
+    $PrincipalIds = @( @{id = "813abb4a-414c-4ac0-9c2c-bd17036fd58c";  type = "User"},
+                    @{id = "b5b9495c-685a-447a-b4d3-2d8e963e6288"; type = "User"})
+
 
 $domain
+$PrincipalIds
 
 Add-FabricDomainWorkspaceByPrincipal -DomainId $domain.id -PrincipalIds $PrincipalIds
 
 Remove-FabricDomainWorkspace -DomainId $domain.id -WorkspaceId $workspace.id
+
+
+AssignFabricDomainWorkspaceRoleAssignment -DomainId $domain.id -DomainRole Contributors -PrincipalIds $PrincipalIds
+Unassign-FabricDomainWorkspaceRoleAssignment -DomainId $domain.id -DomainRole Contributors -PrincipalIds $PrincipalIds
+# Construct the JSON body
+$PrincipalIds = @( @{id = "813abb4a-414c-4ac0-9c2c-bd17036fd58c";  type = "User"},
+@{id = "b5b9495c-685a-447a-b4d3-2d8e963e6288"; type = "User"})
+
+
+$body = @{
+    type = "Contributors"
+    principals = $PrincipalIds
+}
+$bodyJson = $body | ConvertTo-Json -Depth 2
+$bodyJson 
+
+# Make the API request
+#Write-Message -Message "Sending API request for bulk role unassignment..." -Level Info
+$DomainId = "822d6d50-da15-4e91-a310-a75caf4827dc"
+Get-FabricDomain -DomainId $DomainId
+
+if ($DomainId -and $DomainName) {
+    Write-Message -Message "Both 'DomainId' and 'DomainName' were provided. Please specify only one." -Level Error
+    return @()
+}
+Invoke-WebRequest -Headers $FabricConfig.FabricHeaders -Uri "https://api.fabric.microsoft.com/v1/admin/domains/822d6d50-da15-4e91-a310-a75caf4827dc/roleAssignments/bulkUnassign" -Method Post -Body $bodyJson -ContentType "application/json" -ErrorAction Stop

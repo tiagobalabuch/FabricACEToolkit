@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-Bulk assigns roles to principals for workspaces in a Fabric domain.
+Bulk unUnassign roles to principals for workspaces in a Fabric domain.
 
 .DESCRIPTION
 The `AssignFabricDomainWorkspaceRoleAssignment` function performs bulk role assignments for principals in a specific Fabric domain. It sends a POST request to the relevant API endpoint.
@@ -21,7 +21,7 @@ An array of principals to assign roles to. Each principal must include:
 .EXAMPLE
 AssignFabricDomainWorkspaceRoleAssignment -DomainId "12345" -DomainRole "Admins" -PrincipalIds @(@{id="user1"; type="User"}, @{id="group1"; type="Group"})
 
-Assigns the `Admins` role to the specified principals in the domain with ID "12345".
+Unassign the `Admins` role to the specified principals in the domain with ID "12345".
 
 .NOTES
 - Requires `$FabricConfig` global configuration, including `BaseUrl` and `FabricHeaders`.
@@ -32,7 +32,7 @@ Author: Tiago Balabuch
 Date: 2024-12-15
 #>
 
-function AssignFabricDomainWorkspaceRoleAssignment {
+function Unassign-FabricDomainWorkspaceRoleAssignment {
     [CmdletBinding()]
     param (
         [Parameter(Mandatory = $true)]
@@ -61,7 +61,7 @@ function AssignFabricDomainWorkspaceRoleAssignment {
         Is-TokenExpired
 
         # Step 3: Construct the API URL
-        $apiEndpointUrl = "{0}/admin/domains/{1}/roleAssignments/bulkAssign" -f $FabricConfig.BaseUrl, $DomainId
+        $apiEndpointUrl = "{0}/admin/domains/{1}/roleAssignments/bulkUnassign" -f $FabricConfig.BaseUrl, $DomainId
         Write-Message -Message "API Endpoint: $apiEndpointUrl" -Level Info
 
         # Construct the JSON body
@@ -70,10 +70,10 @@ function AssignFabricDomainWorkspaceRoleAssignment {
             principals = $PrincipalIds
         }
         $bodyJson = $body | ConvertTo-Json -Depth 2
-        Write-Message -Message "Request Body: $bodyJson" -Level Debug
+        Write-Message -Message "Request Body: $bodyJson" -Level Info
 
         # Make the API request
-        Write-Message -Message "Sending API request for bulk role assignment..." -Level Info
+        #Write-Message -Message "Sending API request for bulk role unassignment..." -Level Info
         $response = Invoke-WebRequest -Headers $FabricConfig.FabricHeaders -Uri $apiEndpointUrl -Method Post -Body $bodyJson -ContentType "application/json" -ErrorAction Stop
 
         # Handle the API response
@@ -81,9 +81,9 @@ function AssignFabricDomainWorkspaceRoleAssignment {
         Write-Message -Message "Response Code: $responseCode" -Level Info
 
         if ($responseCode -eq 200) {
-            Write-Message -Message "Bulk role assignment for domain '$DomainId' completed successfully!" -Level Info
+            Write-Message -Message "Bulk role unassignment for domain '$DomainId' completed successfully!" -Level Info
         } else {
-            Write-Message -Message "Unexpected response code: $responseCode while performing bulk role assignment." -Level Error
+            Write-Message -Message "Unexpected response code: $responseCode while performing bulk role unassignment." -Level Error
         }
     }
     catch {

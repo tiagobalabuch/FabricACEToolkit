@@ -39,7 +39,7 @@ function Set-FabricHeaders {
         Connect-AzAccount -Tenant $TenantId -ErrorAction Stop | Out-Null
 
         # Retrieve the access token for the Fabric API
-        $fabricToken = Get-AzAccessToken -AsSecureString -ResourceUrl $FabricConfig.ResourceUrl -ErrorAction Stop
+        $fabricToken = Get-AzAccessToken -AsSecureString -ResourceUrl $FabricConfig.ResourceUrl -ErrorAction Stop -WarningAction SilentlyContinue
 
         # Extract the plain token from the secure string
         $plainToken = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto(

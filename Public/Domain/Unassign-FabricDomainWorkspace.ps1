@@ -36,7 +36,7 @@ Unassigns the specified workspaces from the domain with ID "12345".
 Author: Tiago Balabuch  
 Date: 2024-12-15
 #>
-function Unassign -FabricDomainWorkspace {
+function Unassign-FabricDomainWorkspace {
     [CmdletBinding()]
     param (
         [Parameter(Mandatory = $true)]
