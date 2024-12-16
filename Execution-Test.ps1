@@ -1,3 +1,6 @@
+
+Import-Module Az.Account
+Set-ExecutionPolicy Unrestricted -Scope CurrentUser
 Import-Module .\FabricACEToolkit -Force
 Get-Command -Module FabricACEToolkit
 
@@ -106,3 +109,5 @@ $PrincipalIds = @{
 $domain
 
 Add-FabricDomainWorkspaceByPrincipal -DomainId $domain.id -PrincipalIds $PrincipalIds
+
+Remove-FabricDomainWorkspace -DomainId $domain.id -WorkspaceId $workspace.id

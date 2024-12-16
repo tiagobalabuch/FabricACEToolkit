@@ -3,7 +3,7 @@
 Assigns a Fabric workspace to a specified capacity.
 
 .DESCRIPTION
-The `Set-FabricWorkspaceCapacity` function sends a POST request to assign a workspace to a specific capacity.
+The `Assign-FabricWorkspaceCapacity` function sends a POST request to assign a workspace to a specific capacity.
 
 .PARAMETER WorkspaceId
 The unique identifier of the workspace to be assigned.
@@ -12,7 +12,7 @@ The unique identifier of the workspace to be assigned.
 The unique identifier of the capacity to which the workspace should be assigned.
 
 .EXAMPLE
-Set-FabricWorkspaceCapacity -WorkspaceId "workspace123" -CapacityId "capacity456"
+Assign-FabricWorkspaceCapacity -WorkspaceId "workspace123" -CapacityId "capacity456"
 
 Assigns the workspace with ID "workspace123" to the capacity "capacity456".
 
@@ -24,7 +24,7 @@ Author: Tiago Balabuch
 Date: 2024-12-14
 #>
 
-function Set-FabricWorkspaceCapacity {
+function Assign-FabricWorkspaceCapacity {
     [CmdletBinding()]
     param (
         [Parameter(Mandatory = $true)]

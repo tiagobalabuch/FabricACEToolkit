@@ -3,7 +3,7 @@
 Assigns workspaces to a domain based on principal IDs in Microsoft Fabric.
 
 .DESCRIPTION
-The `Add-FabricDomainWorkspaceByPrincipal` function sends a request to assign workspaces to a specified domain using a JSON object of principal IDs and types.
+The `Assign-FabricDomainWorkspaceByPrincipal` function sends a request to assign workspaces to a specified domain using a JSON object of principal IDs and types.
 
 .PARAMETER DomainId
 The ID of the domain to which workspaces will be assigned. This parameter is mandatory.
@@ -18,7 +18,7 @@ $principals = @{
         @{ id = "group1"; type = "Group" }
     )
 }
-Add-FabricDomainWorkspaceByPrincipal -DomainId "12345" -PrincipalIds $principals
+Assign-FabricDomainWorkspaceByPrincipal -DomainId "12345" -PrincipalIds $principals
 
 Assigns the workspaces based on the provided principal IDs and types.
 
@@ -30,12 +30,17 @@ Author: Tiago Balabuch
 Date: 2024-12-15
 #>
 
-function Add-FabricDomainWorkspaceByPrincipal {
+function Assign-FabricDomainWorkspaceByPrincipal {
     [CmdletBinding()]
     param (
         [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
         [string]$DomainId,
+
+        [Parameter(Mandatory = $true)]
+        [ValidateNotNullOrEmpty()]
+        [ValidateSet('Owner', 'Member', 'Guest')]
+        [string]$DomainRole,
 
         [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
@@ -71,7 +76,7 @@ function Add-FabricDomainWorkspaceByPrincipal {
 
         # Handle response
         $responseCode = $response.StatusCode
-        Write-Message -Message "Response Code: $responseCode" -Level Info
+        #Write-Message -Message "Response Code: $responseCode" -Level Info
 
         if ($responseCode -eq 202) {
             Write-Message -Message "Assigning domain workspaces by principal is in progress!" -Level Info
