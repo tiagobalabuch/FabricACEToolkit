@@ -47,7 +47,7 @@ function Add-FabricEventhouse {
     try {
         # Step 1: Ensure token validity
         #Write-Message -Message "Validating token..." -Level Info
-        Is-TokenExpired
+        Test-TokenExpired
         #Write-Message -Message "Token validation completed." -Level Info
 
         # Step 2: Construct the API URL
@@ -65,29 +65,27 @@ function Add-FabricEventhouse {
 
         # Convert the body to JSON
         $bodyJson = $body | ConvertTo-Json -Depth 2
-        #Write-Message -Message "Request Body: $bodyJson" -Level Debug
+        #Write-Message -Message "Request Body: $bodyJson" -Level message
 
         # Step 4: Make the API request
-        Write-Message -Message "Sending API request to create Eventhouse '$EventhouseName'..." -Level Info
-        $response = Invoke-WebRequest -Headers $FabricConfig.FabricHeaders -Uri $apiEndpointUrl -Method Post -Body $bodyJson -ContentType "application/json" -ErrorAction Stop
+        Write-Message -Message "Sending API request to create Eventhouse '$EventhouseName'..." -Level Message
+        $response = Invoke-RestMethod -Headers $FabricConfig.FabricHeaders -Uri $apiEndpointUrl -Method Post -Body $bodyJson -ContentType "application/json" -ErrorAction Stop -SkipHttpErrorCheck -StatusCodeVariable "statusCode"
 
-        # Step 5: Handle response
-        $responseCode = $response.StatusCode
-        #Write-Message -Message "Response Code: $responseCode" -Level Info
-
-        $data = $response.Content | ConvertFrom-Json
-
-        if ($responseCode -eq 200) {
-            Write-Message -Message "Eventhouse '$EventhouseName' created successfully!" -Level Info
-            return $data
-        }
-        elseif ($responseCode -eq 202) {
-            Write-Message -Message "Eventhouse '$EventhouseName' request accepted. Provisioning in progress!" -Level Info
-            return $data
-        }
-        else {
-            Write-Message -Message "Unexpected response code: $responseCode while creating the Eventhouse." -Level Error
-            return $null
+        # Step 5: Handle and log the response
+        switch ($statusCode) {
+            201 {
+                Write-Message -Message "Eventhouse '$EventhouseName' created successfully!" -Level Info
+                return $response.value
+            }
+            202 {
+                Write-Message -Message "Eventhouse '$EventhouseName' creation accepted. Provisioning in progress!" -Level Info
+                return $response.value
+            }
+            default {
+                Write-Message -Message "Unexpected response code: $statusCode" -Level Error
+                Write-Message -Message "Error details: $($response.message)" -Level Error
+                throw "API request failed with status code $statusCode."
+            }
         }
     }
     catch {

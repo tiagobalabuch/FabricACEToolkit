@@ -37,14 +37,16 @@ function Assign-FabricWorkspaceCapacity {
     )
 
     try {
-        # Ensure token validity
-        Is-TokenExpired
+        # Step 1: Ensure token validity
+        #Write-Message -Message "Validating token..." -Level Info
+        Test-TokenExpired
+        #Write-Message -Message "Token validation completed." -Level Info
 
-        # Construct the API URL
+        # Step 2: Construct the API URL
         $apiEndpointUrl = "{0}/workspaces/{1}/assignToCapacity" -f $FabricConfig.BaseUrl, $WorkspaceId
-        Write-Message -Message "API Endpoint: $apiEndpointUrl" -Level Info
+        Write-Message -Message "API Endpoint: $apiEndpointUrl" -Level Message
 
-        # Prepare the request body
+        # Step 3: Construct the request body
         $body = @{
             capacityId = $CapacityId
         }
@@ -53,26 +55,23 @@ function Assign-FabricWorkspaceCapacity {
         $bodyJson = $body | ConvertTo-Json -Depth 4 -Compress
         #Write-Message -Message "Request Body: $bodyJson" -Level Info
 
-        # Make the API request
-        $response = Invoke-WebRequest -Headers $FabricConfig.FabricHeaders -Uri $apiEndpointUrl -Method Post -Body $bodyJson -ContentType "application/json" -ErrorAction Stop
+        # Step 4: Make the API request
+        $response = Invoke-RestMethod -Headers $FabricConfig.FabricHeaders -Uri $apiEndpointUrl -Method Post -Body $bodyJson -ContentType "application/json" -ErrorAction Stop -SkipHttpErrorCheck -StatusCodeVariable "statusCode"
 
-        # Parse and log the response
-        $responseCode = $response.StatusCode
-        #Write-Message -Message "Response Code: $responseCode" -Level Info
-
-        if ($responseCode -eq 202) {
-                Write-Message -Message "Workspace '$WorkspaceId' successfully assigned to capacity '$CapacityId'!" -Level Info
-                return $null
-        } else {
-            # Unexpected response handling
-            Write-Message -Message "Unexpected response code: $responseCode while assigning workspace to capacity." -Level Error
+        # Step 5: Validate the response code
+        if ($statusCode -ne 202) {
+            Write-Message -Message "Unexpected response code: $statusCode from the API." -Level Error
+            Write-Message -Message "Error: $($response.message)" -Level Error
+            Write-Message "Error Code: $($response.errorCode)" -Level Error
             return $null
         }
+
+        Write-Message -Message "Workspace '$WorkspaceId' successfully assigned to capacity '$CapacityId'!" -Level Info
+        return $null
     }
     catch {
-        # Log errors
+        # Step 6: Capture and log error details
         $errorDetails = $_.Exception.Message
         Write-Message -Message "Failed to assign workspace to capacity. Error: $errorDetails" -Level Error
-        #throw "Error assigning workspace to capacity: $errorDetails"
     }
 }

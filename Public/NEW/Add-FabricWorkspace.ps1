@@ -1,47 +1,41 @@
 <#
 .SYNOPSIS
-Creates a new environment in a specified workspace.
+Creates a new Fabric workspace with the specified display name.
 
 .DESCRIPTION
-The `Add-FabricEnvironment` function creates a new environment within a given workspace by making a POST request to the Fabric API. The environment can optionally include a description.
+The `Add-FabricWorkspace` function creates a new workspace in the Fabric platform by sending a POST request to the API. It validates the display name and handles both success and error responses.
 
-.PARAMETER WorkspaceId
-(Mandatory) The ID of the workspace where the environment will be created.
-
-.PARAMETER EnvironmentName
-(Mandatory) The name of the environment to be created. Only alphanumeric characters, spaces, and underscores are allowed.
-
-.PARAMETER EnvironmentDescription
-(Optional) A description of the environment.
+.PARAMETER WorkspaceName
+The display name of the workspace to be created. Must only contain alphanumeric characters, spaces, and underscores.
 
 .EXAMPLE
-Add-FabricEnvironment -WorkspaceId "12345" -EnvironmentName "DevEnv" -EnvironmentDescription "Development Environment"
+Add-FabricWorkspace -WorkspaceName "NewWorkspace"
 
-Creates an environment named "DevEnv" in workspace "12345" with the specified description.
+Creates a workspace named "NewWorkspace".
 
 .NOTES
 - Requires `$FabricConfig` global configuration, including `BaseUrl` and `FabricHeaders`.
 - Calls `Test-TokenExpired` to ensure token validity before making the API request.
 
-Author: Tiago Balabuch  
-Date: 2024-12-15
+Author: Tiago Balabuch
+Date: 2024-12-12
 #>
 
-function Add-FabricEnvironment {
+function Add-FabricWorkspace {
     [CmdletBinding()]
     param (
         [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
-        [string]$WorkspaceId,
-
-        [Parameter(Mandatory = $true)]
-        [ValidateNotNullOrEmpty()]
         [ValidatePattern('^[a-zA-Z0-9_ ]*$')]
-        [string]$EnvironmentName,
+        [string]$WorkspaceName,
 
         [Parameter(Mandatory = $false)]
         [ValidateNotNullOrEmpty()]
-        [string]$EnvironmentDescription
+        [string]$WorkspaceDescription,
+
+        [Parameter(Mandatory = $false)]
+        [ValidateNotNullOrEmpty()]
+        [string]$CapacityId
     )
 
     try {
@@ -51,34 +45,38 @@ function Add-FabricEnvironment {
         #Write-Message -Message "Token validation completed." -Level Info
 
         # Step 2: Construct the API URL
-        $apiEndpointUrl = "{0}/workspaces/{1}/environments" -f $FabricConfig.BaseUrl, $WorkspaceId
+        $apiEndpointUrl = "{0}/workspaces" -f $FabricConfig.BaseUrl
         Write-Message -Message "API Endpoint: $apiEndpointUrl" -Level Message
 
         # Step 3: Construct the request body
         $body = @{
-            displayName = $EnvironmentName
-            description = $EnvironmentDescription
+            displayName = $WorkspaceName
         }
 
-        if ($EnvironmentDescription) {
-            $body.description = $EnvironmentDescription
+        if ($WorkspaceDescription) {
+            $body.description = $WorkspaceDescription
         }
 
+        if ($CapacityId) {
+            $body.capacityId = $CapacityId
+        }
+
+        # Convert the body to JSON
         $bodyJson = $body | ConvertTo-Json -Depth 2
         #Write-Message -Message "Request Body: $bodyJson" -Level Message
 
         # Step 4: Make the API request
-        Write-Message -Message "Sending API request to create Environment '$EnvironmentName'..." -Level Message
+        Write-Message -Message "Sending API request to create Workspace '$WorkspaceName'..." -Level Message
         $response = Invoke-RestMethod -Headers $FabricConfig.FabricHeaders -Uri $apiEndpointUrl -Method Post -Body $bodyJson -ContentType "application/json" -ErrorAction Stop -SkipHttpErrorCheck -StatusCodeVariable "statusCode"
 
         # Step 5: Handle and log the response
         switch ($statusCode) {
             201 {
-                Write-Message -Message "Environment '$EnvironmentName' created successfully!" -Level Info
+                Write-Message -Message "Workspace '$WorkspaceName' created successfully!" -Level Info
                 return $response.value
             }
             202 {
-                Write-Message -Message "Environment '$EnvironmentName' creation accepted. Provisioning in progress!" -Level Info
+                Write-Message -Message "Workspace '$WorkspaceName' creation accepted. Provisioning in progress!" -Level Info
                 return $response.value
             }
             default {
@@ -91,6 +89,7 @@ function Add-FabricEnvironment {
     catch {
         # Step 6: Handle and log errors
         $errorDetails = $_.Exception.Message
-        Write-Message -Message "Failed to create environment. Error: $errorDetails" -Level Error
+        Write-Message -Message "Failed to create workspace. Error: $errorDetails" -Level Error
+        
     }
 }

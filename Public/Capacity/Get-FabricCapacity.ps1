@@ -1,16 +1,15 @@
 <#
 .SYNOPSIS
-Retrieves a Fabric capacity by either its ID, Display Name, or all capacities if no filter is provided.
+Retrieves a Fabric capacity by its ID, Display Name, or returns all capacities if no filter is provided.
 
 .DESCRIPTION
-The `Get-FabricCapacity` function retrieves specific Fabric capacities based on the provided ID or Display Name. 
-If no ID or Display Name is specified, it returns all capacities.
+The `Get-FabricCapacity` function interacts with the Fabric API to retrieve capacity details. It can filter by `capacityId` or `capacityName`, or return all available capacities if no filter is specified.
 
 .PARAMETER capacityId
-The unique identifier of the Fabric capacity to retrieve.
+(Optional) The unique identifier of the Fabric capacity to retrieve.
 
 .PARAMETER capacityName
-The display name of the Fabric capacity to retrieve.
+(Optional) The display name of the Fabric capacity to retrieve.
 
 .EXAMPLE
 Get-FabricCapacity -capacityId "12345"
@@ -29,9 +28,9 @@ Retrieve all available capacities.
 
 .NOTES
 - Requires the `$FabricConfig` global object, including `BaseUrl` and `FabricHeaders`.
-- Calls `Is-TokenExpired` to ensure the token is valid before making the API request.
+- Uses `Test-TokenExpired` to validate the token before making API calls.
 
-Author: Tiago Balabuch
+Author: Tiago Balabuch  
 Date: 2024-12-12
 #>
 
@@ -48,67 +47,63 @@ function Get-FabricCapacity {
     )
 
     try {
-        # Handle ambiguous input
+        # Step 1: Handle ambiguous input
         if ($capacityId -and $capacityName) {
             Write-Message -Message "Both 'capacityId' and 'capacityName' were provided. Please specify only one." -Level Error
-            return @()
+            return $null
         }
 
-        # Check if the token is expired
-        Is-TokenExpired
+        # Step 2: Ensure token validity
+        Test-TokenExpired
 
-        # Construct the API URL
+        # Step 3: Construct the API URL
         $apiEndpointUrl = "{0}/capacities" -f $FabricConfig.BaseUrl
-        Write-Message -Message "API Endpoint: $apiEndpointUrl" -Level Info
+        Write-Message -Message "API Endpoint: $apiEndpointUrl" -Level Message
 
-        # Make the API request
-        $response = Invoke-WebRequest -Headers $FabricConfig.FabricHeaders -Uri $apiEndpointUrl -Method Get -ErrorAction Stop
+        # Step 4: Make the API request
+        $response = Invoke-RestMethod -Headers $FabricConfig.FabricHeaders -Uri $apiEndpointUrl -Method Get -ErrorAction Stop -SkipHttpErrorCheck -StatusCodeVariable "statusCode"
 
-        # Validate and parse the response
-        if (-not $response.Content) {
-            Write-Message -Message "Empty response from the API." -Level 
-            return @()
+        # Step 5: Validate the response code
+        if ($statusCode -ne 200) {
+            Write-Message -Message "Unexpected response code: $statusCode from the API." -Level Error
+            Write-Message -Message "Error: $($response.message)" -Level Error
+            Write-Message "Error Code: $($response.errorCode)" -Level Error
+            return $null
         }
-        
-        $responseCode = $response.StatusCode
-        #Write-Message -Message "Response Code: $responseCode" -Level Info
-        
-        $data = $response.Content | ConvertFrom-Json
 
-        if ($responseCode -eq 200) {
-            $data = $response.Content | ConvertFrom-Json
+        # Step 6: Handle empty response
+        if (-not $response.value) {
+            Write-Message -Message "No capacities returned from the API." -Level Warning
+            return $null
+        }
 
-            # Filter results based on provided parameter
-            $capacity = if ($capacityId) {
-                $data.value | Where-Object { $_.Id -eq $capacityId }
-            }
-            elseif ($capacityName) {
-                $data.value | Where-Object { $_.DisplayName -eq $capacityName }
-            }
-            else {
-                # Return all capacities if no filter is provided
-                Write-Message -Message "No filter provided. Returning all capacities." -Level Info
-                return $data.value
-            }
-
-            if ($capacity) {
-                Write-Message -Message "Capacity found" -Level Info
-                return $capacity
-            }
-            else {
-                Write-Message -Message "No capacity found matching the provided criteria." -Level Warning
-                return $null
-            }
+        # Step 7: Filter results based on provided parameters
+        $capacity = if ($capacityId) {
+            $response.value | Where-Object { $_.Id -eq $capacityId }
+        }
+        elseif ($capacityName) {
+            $response.value | Where-Object { $_.DisplayName -eq $capacityName }
         }
         else {
-            Write-Message -Message "No capacities returned from the API." -Level Warning
-            return @()
+            # No filter, return all capacities
+            Write-Message -Message "No filter specified. Returning all capacities." -Level Message
+            return $response.value
+        }
+
+        # Step 8: Handle results
+        if ($capacity) {
+            Write-Message -Message "Capacity found matching the specified criteria." -Level Message
+            return $capacity
+        }
+        else {
+            Write-Message -Message "No capacity found matching the specified criteria." -Level Warning
+            return $null
         }
     }
     catch {
-        # Handle and log errors
-        $errorDetails = Get-ErrorResponse($_.Exception)
+        # Step 9: Capture and log error details
+        $errorDetails = $_.Exception.Message
         Write-Message -Message "Failed to retrieve capacity. Error: $errorDetails" -Level Error
-       # Write-Message -Message "Failed to retrieve capacity. Error: $_.Exception" -Level Error
+        return $null
     }
 }

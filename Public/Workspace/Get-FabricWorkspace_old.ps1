@@ -22,15 +22,15 @@ Get-FabricWorkspace -WorkspaceName "MyWorkspace"
 Fetches details of the workspace with the name "MyWorkspace".
 
 .NOTES
-- Requires the `$FabricConfig` global object, including `BaseUrl` and `FabricHeaders`.
-- Calls `Is-TokenExpired` to ensure the token is valid before making the API request.
+- Requires `$FabricConfig` global configuration, including `BaseUrl` and `FabricHeaders`.
+- Calls `Test-TokenExpired` to ensure token validity before making the API request.
 - Returns the matching workspace details or all workspaces if no filter is provided.
 
 Author: Tiago Balabuch  
 Date: 2024-12-13
 #>
 
-function Get-FabricWorkspace {
+function Get-FabricWorkspace_old {
     [CmdletBinding()]
     param (
         [Parameter(Mandatory = $false)]

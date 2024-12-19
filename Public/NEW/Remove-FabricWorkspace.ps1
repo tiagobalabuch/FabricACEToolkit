@@ -32,35 +32,32 @@ function Remove-FabricWorkspace {
     )
 
     try {
-        # Check if the token is expired
-        Is-TokenExpired
+        # Step 1: Ensure token validity
+        Test-TokenExpired
 
-        # Construct the API URL
+        # Step 2: Construct the API URL
         $apiEndpointUrl = "{0}/workspaces/{1}" -f $FabricConfig.BaseUrl, $WorkspaceId
-        Write-Message -Message "API Endpoint: $apiEndpointUrl" -Level Info
+        Write-Message -Message "API Endpoint: $apiEndpointUrl" -Level Message
 
-        # Make the API request
-        $response = Invoke-WebRequest -Headers $FabricConfig.FabricHeaders -Uri $apiEndpointUrl -Method Delete -ErrorAction Stop
+        # Step 3: Make the API request
+        $response = Invoke-RestMethod -Headers $FabricConfig.FabricHeaders -Uri $apiEndpointUrl -Method Delete -ErrorAction Stop -SkipHttpErrorCheck -StatusCodeVariable "statusCode"
 
-        # Parse and log the response
-        $responseCode = $response.StatusCode
-        #Write-Message -Message "Response Code: $responseCode" -Level Info
-
-        if ($responseCode -eq 200) {
-            # Handle successful deletion
-            Write-Message -Message "Workspace '$WorkspaceId' deleted successfully!" -Level Info
+        # Step 4: Validate the response code
+        if ($statusCode -ne 200) {
+            Write-Message -Message "Unexpected response code: $statusCode from the API." -Level Error
+            Write-Message -Message "Error: $($response.message)" -Level Error
+            Write-Message "Error Code: $($response.errorCode)" -Level Error
             return $null
         }
-        else {
-            # Log unexpected response codes
-            Write-Message -Message "Unexpected response code: $responseCode" -Level Error
-            return $null
-        }
+
+        Write-Message -Message "Workspace '$WorkspaceId' deleted successfully!" -Level Info
+        return $null
+
     }
     catch {
-        # Capture detailed error information
-        $errorDetails = Get-ErrorResponse($_.Exception)
-        Write-Message -Message "Failed to delete workspace '$WorkspaceId'. Error: $errorDetails" -Level Error
-        #Write-Message -Message "Failed to delete workspace '$WorkspaceId'. Error: $_.Exception" -Level Error
+        # Step 5: Capture and log error details
+        $errorDetails = $_.Exception.Message
+        Write-Message -Message "Failed to retrieve capacity. Error: $errorDetails" -Level Error
+        return $null
     }
 }

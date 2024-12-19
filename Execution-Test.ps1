@@ -1,32 +1,67 @@
 
 Import-Module Az.Account
 Set-ExecutionPolicy Unrestricted 
-Import-Module .\FabricACEToolkit -Force -WarningAction SilentlyContinue -InformationAction SilentlyContinue
+Import-Module .\FabricACEToolkit -Force -DisableNameChecking
 Get-Command -Module FabricACEToolkit 
-
-Test-TokenExpired
-
 Set-FabricHeaders -tenantId "2ca1a04f-621b-4a1f-bad6-7ecd3ae78e25"
-
-Get-FabricTenantSetting -SettingTitle "Users can create Fabric items"
-Get-FabricWorkspace2
-Get-FabricWorkspace
 
 # Capacity
 Get-FabricCapacity 
-Get-FabricCapacity -capacityId "6b3297a9-84d0-4f51-99ac-76dda2572ba9"
+Get-FabricCapacity -capacityId "6b3297a9-84d0-4f51-99ac-76dda2572ba4"
 Get-FabricCapacity -capacityName "tiagocapacity"
-
-# Workspace
-Get-FabricWorkspace
-Get-FabricWorkspace -WorkspaceId "dda81258-3461-4135-b4db-71552064e50ac"
-Get-FabricWorkspace -WorkspaceName "FinOps API TIAGO"
-
 Add-FabricWorkspace -WorkspaceName "Tiago API"
 
-$workspace = Add-FabricWorkspace -WorkspaceName "Tiago API2"
+# Get Workspace
+Get-FabricWorkspace
+Get-FabricWorkspace -WorkspaceName "Tiago API"
+Get-FabricWorkspace -WorkspaceId "dda81258-3461-4135-b4db-71552064e50ac" # ID does not exist
 
-Update-FabricWorkspace -WorkspaceId $workspace.id -WorkspaceName "Tiago API UPDATED" -WorkspaceDescription "Updated description"
+# Add Workspace
+Add-FabricWorkspace -WorkspaceName "Tiago API" 
+Add-FabricWorkspace -WorkspaceName "Tiago API2" -WorkspaceDescription "API data workspace"
+$capacity = Get-FabricCapacity -capacityName "tiagocapacity"
+Add-FabricWorkspace -WorkspaceName "Tiago API3" -WorkspaceDescription "API data workspace" -CapacityId $capacity.id
+
+# Update Workspace
+$workspace = Add-FabricWorkspace -WorkspaceName "Tiago AP4" 
+Update-FabricWorkspace -WorkspaceId $workspace.id -WorkspaceName "Tiago API4 UPDATED" -WorkspaceDescription "Updated description"
+#Remove-FabricWorkspace -WorkspaceId $workspace.id 
+
+# Remove Workspace 
+$workspace = Get-FabricWorkspace -WorkspaceName "Tiago API2"
+#Remove-FabricWorkspace -WorkspaceId #$workspace.id 
+$workspace = Get-FabricWorkspace -WorkspaceName "Tiago API3"
+#Remove-FabricWorkspace -WorkspaceId $workspace.id 
+
+
+# Assing Capacity
+
+$capacity = Get-FabricCapacity -capacityName "tiagocapacity"
+$workspace = Get-FabricWorkspace -WorkspaceName "Tiago API"
+Assign-FabricWorkspaceCapacity -WorkspaceId $workspace.id -CapacityId $capacity.id
+
+# Unassing Capacity
+$workspace = Get-FabricWorkspace -WorkspaceName "Tiago API"
+Unassign-FabricWorkspaceCapacity -WorkspaceId $workspace.id 
+
+# Environment
+$workspace = Get-FabricWorkspace -WorkspaceName "Tiago API"
+Add-FabricEnvironment -WorkspaceId $workspace.id -EnvironmentName "DevEnv7" -EnvironmentDescription "Development Environment"
+
+
+# Eventhouse
+$workspace = Get-FabricWorkspace -WorkspaceName "Tiago API"
+Add-FabricEventhouse -WorkspaceId $workspace.id -EventhouseName "EH01" -EventhouseDescription "EH Events"
+
+
+
+Get-FabricTenantSetting -SettingTitle "Users can create Fabric items"
+
+Get-FabricWorkspace
+
+
+
+
 
 # Remove-FabricWorkspace -WorkspaceId $workspace.id
 

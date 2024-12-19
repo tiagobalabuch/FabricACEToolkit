@@ -46,7 +46,7 @@ function Test-TokenExpired {
         }
 
         # Log valid token status
-        Write-Message -Message "Token is still valid. Expiry time: $($tokenExpiryDate.ToString("u"))" -Level Info
+        Write-Message -Message "Token is still valid. Expiry time: $($tokenExpiryDate.ToString("u"))" -Level Message
     } catch [System.FormatException] {
         Write-Message -Message "Invalid 'TokenExpiresOn' format in the FabricConfig object. Ensure it is a valid datetime string." -Level Error
         throw "FormatException: Invalid TokenExpiresOn value."
