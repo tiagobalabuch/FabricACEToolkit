@@ -1,11 +1,16 @@
 
 Import-Module Az.Account
-Set-ExecutionPolicy Unrestricted -Scope CurrentUser
-Import-Module .\FabricACEToolkit -Force
+Set-ExecutionPolicy Unrestricted 
+Import-Module .\FabricACEToolkit -Force -WarningAction SilentlyContinue -InformationAction SilentlyContinue
 Get-Command -Module FabricACEToolkit 
+
+Test-TokenExpired
 
 Set-FabricHeaders -tenantId "2ca1a04f-621b-4a1f-bad6-7ecd3ae78e25"
 
+Get-FabricTenantSetting -SettingTitle "Users can create Fabric items"
+Get-FabricWorkspace2
+Get-FabricWorkspace
 
 # Capacity
 Get-FabricCapacity 
@@ -25,7 +30,7 @@ Update-FabricWorkspace -WorkspaceId $workspace.id -WorkspaceName "Tiago API UPDA
 
 # Remove-FabricWorkspace -WorkspaceId $workspace.id
 
-$workspace = Get-FabricWorkspace -WorkspaceName "mapereitest" 
+$workspace = Get-FabricWorkspace -WorkspaceName "Learning" 
 Get-FabricWorkspaceRoleAssignment -WorkspaceId $workspace.id
 Get-FabricWorkspaceRoleAssignment -WorkspaceId $workspace.id -WorkspaceRoleAssignmentId "31fb536a-c93b-4e3c-a8b7-591991da005d"  | Format-Table
 
@@ -131,8 +136,58 @@ $bodyJson
 $DomainId = "822d6d50-da15-4e91-a310-a75caf4827dc"
 Get-FabricDomain -DomainId $DomainId
 
-if ($DomainId -and $DomainName) {
-    Write-Message -Message "Both 'DomainId' and 'DomainName' were provided. Please specify only one." -Level Error
-    return @()
+Get-FabricEnvironment -WorkspaceId $workspace.id
+
+try {
+    Invoke-WebRequest -Headers $FabricConfig.FabricHeaders -Uri "https://api.fabric.microsoft.com/v1/workspaces/fa69c132-6e79-4d5f-9074-37894d084f5e/environments" -Method Get -ErrorAction Stop
+} catch {
+    $webException = $_.Exception.InnerException
+    if ($webException) {
+        Write-Output "WebException Message: $($webException.Message)"
+        Write-Output "HTTP Status Code: $($webException.Response.StatusCode)"
+        Write-Output "HTTP Status Description: $($webException.Response.StatusDescription)"
+    } else {
+        Write-Output "General Error: $($_.Exception.Message)"
+    }
 }
-Invoke-WebRequest -Headers $FabricConfig.FabricHeaders -Uri "https://api.fabric.microsoft.com/v1/admin/domains/822d6d50-da15-4e91-a310-a75caf4827dc/roleAssignments/bulkUnassign" -Method Post -Body $bodyJson -ContentType "application/json" -ErrorAction Stop
+
+
+try {
+    #Invoke-WebRequest -Headers $FabricConfig.FabricHeaders -Uri "https://api.fabric.microsoft.com/v1/workspaces/faa69c132-6e79-4d5f-9074-37894d084f5e/environments" -Method Get -ErrorAction Stop
+    $a = Invoke-RestMethod -Headers $FabricConfig.FabricHeaders -SkipHttpErrorCheck -StatusCodeVariable "statusCode"  -Uri "https://api.fabric.microsoft.com/v1/workspacesa" -Method Get -ErrorAction Stop
+    #$a.message
+    #$statusCode
+    #$a
+ }
+    catch {            
+        #Write-host  $a.message
+        
+        Write-host 'error'
+    }
+
+$a = Invoke-RestMethod -Headers $FabricConfig.FabricHeaders -SkipHttpErrorCheck -StatusCodeVariable "statusCode"  -Uri "https://api.fabric.microsoft.com/v1/workspaces/fa69c132-6e79-4d5f-9074-37894d084f5e/environments" -Method Get -ErrorAction Stop
+$statusCode
+Get-FabricWorkspace
+$a.value 
+
+
+
+try {
+    # Make a REST API call with -SkipHttpErrorCheck to prevent automatic error handling
+    $response = Invoke-RestMethod -Headers $FabricConfig.FabricHeaders -SkipHttpErrorCheck -StatusCodeVariable "statusCode"  -Uri "https://api.fabric.microsoft.com/v1/workspaces/fa69c132-6e79-4d5f-9074-37894d084f5e/environments" -Method Get -ErrorAction Stop
+    $statusCode
+    #$response
+    # Check the HTTP status code to see if there's an error
+    if ($statusCode -ge 400) {
+        throw
+    } else {
+        # Handle success case
+        Write-Host "Success: $($response.Content)"
+    }
+} catch {
+    # Catch any unexpected errors (e.g., connection failures)
+    Write-Host "An unexpected error occurred: $_"
+    Write-Host "HTTP Error: $($response.message)"
+    Write-Host "Error Code: $($response.errorCode)"
+}
+

@@ -1,0 +1,98 @@
+<#
+.SYNOPSIS
+Creates a new Eventhouse in a specified workspace.
+
+.DESCRIPTION
+The `Add-FabricEventhouse` function sends a POST request to the Fabric API to create a new Eventhouse in the specified workspace. The function allows specifying an optional description for the Eventhouse.
+
+.PARAMETER WorkspaceId
+(Mandatory) The ID of the workspace where the Eventhouse will be created.
+
+.PARAMETER EventhouseName
+(Mandatory) The name of the Eventhouse to be created. Only alphanumeric characters, spaces, and underscores are allowed.
+
+.PARAMETER EventhouseDescription
+(Optional) A description of the Eventhouse.
+
+.EXAMPLE
+Add-FabricEventhouse -WorkspaceId "12345" -EventhouseName "MainEvents" -EventhouseDescription "Handles core event streaming."
+
+Creates an Eventhouse named "MainEvents" in workspace "12345" with the provided description.
+
+.NOTES
+- Requires `$FabricConfig` global configuration, including `BaseUrl` and `FabricHeaders`.
+- Ensures token validity before making the API request.
+
+Author: Tiago Balabuch  
+Date: 2024-12-15
+#>
+
+function Add-FabricEventhouse {
+    [CmdletBinding()]
+    param (
+        [Parameter(Mandatory = $true)]
+        [ValidateNotNullOrEmpty()]
+        [string]$WorkspaceId,
+
+        [Parameter(Mandatory = $true)]
+        [ValidateNotNullOrEmpty()]
+        [ValidatePattern('^[a-zA-Z0-9_ ]*$')]
+        [string]$EventhouseName,
+
+        [Parameter(Mandatory = $false)]
+        [ValidateNotNullOrEmpty()]
+        [string]$EventhouseDescription
+    )
+
+    try {
+        # Step 1: Ensure token validity
+        #Write-Message -Message "Validating token..." -Level Info
+        Is-TokenExpired
+        #Write-Message -Message "Token validation completed." -Level Info
+
+        # Step 2: Construct the API URL
+        $apiEndpointUrl = "{0}/workspaces/{1}/eventhouses" -f $FabricConfig.BaseUrl, $WorkspaceId
+        Write-Message -Message "API Endpoint: $apiEndpointUrl" -Level Info
+
+        # Step 3: Construct the request body
+        $body = @{
+            displayName = $EventhouseName
+        }
+
+        if ($EventhouseDescription) {
+            $body.description = $EventhouseDescription
+        }
+
+        # Convert the body to JSON
+        $bodyJson = $body | ConvertTo-Json -Depth 2
+        #Write-Message -Message "Request Body: $bodyJson" -Level Debug
+
+        # Step 4: Make the API request
+        Write-Message -Message "Sending API request to create Eventhouse '$EventhouseName'..." -Level Info
+        $response = Invoke-WebRequest -Headers $FabricConfig.FabricHeaders -Uri $apiEndpointUrl -Method Post -Body $bodyJson -ContentType "application/json" -ErrorAction Stop
+
+        # Step 5: Handle response
+        $responseCode = $response.StatusCode
+        #Write-Message -Message "Response Code: $responseCode" -Level Info
+
+        $data = $response.Content | ConvertFrom-Json
+
+        if ($responseCode -eq 200) {
+            Write-Message -Message "Eventhouse '$EventhouseName' created successfully!" -Level Info
+            return $data
+        }
+        elseif ($responseCode -eq 202) {
+            Write-Message -Message "Eventhouse '$EventhouseName' request accepted. Provisioning in progress!" -Level Info
+            return $data
+        }
+        else {
+            Write-Message -Message "Unexpected response code: $responseCode while creating the Eventhouse." -Level Error
+            return $null
+        }
+    }
+    catch {
+        # Step 6: Handle and log errors
+        $errorDetails = $_.Exception.Message
+        Write-Message -Message "Failed to create Eventhouse. Error: $errorDetails" -Level Error
+    }
+}

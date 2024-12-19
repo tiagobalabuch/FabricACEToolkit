@@ -3,7 +3,7 @@
 Checks if the Fabric token is expired and logs appropriate messages.
 
 .DESCRIPTION
-The `Is-TokenExpired` function checks the expiration status of the Fabric token stored in the `$FabricConfig.TokenExpiresOn` variable. 
+The `Test-TokenExpired` function checks the expiration status of the Fabric token stored in the `$FabricConfig.TokenExpiresOn` variable. 
 If the token is expired, it logs an error message and provides guidance for refreshing the token. 
 Otherwise, it logs that the token is still valid.
 
@@ -11,7 +11,7 @@ Otherwise, it logs that the token is still valid.
 The configuration object containing the token expiration details.
 
 .EXAMPLE
-Is-TokenExpired -FabricConfig $config
+Test-TokenExpired -FabricConfig $config
 
 Checks the token expiration status using the provided `$config` object.
 
@@ -23,19 +23,16 @@ Checks the token expiration status using the provided `$config` object.
 Tiago Balabuch
 #>
 get-verb
-function Is-TokenExpired {
+function Test-TokenExpired {
     [CmdletBinding()]
-    param (
- #       [Parameter(Mandatory)]
- #       [PSCustomObject]$FabricConfig
-    )
+    param ()
 
     try {
         # Ensure required properties have valid values
         if ([string]::IsNullOrWhiteSpace($FabricConfig.TenantIdGlobal) -or 
             [string]::IsNullOrWhiteSpace($FabricConfig.TokenExpiresOn)) {
             Write-Message -Message "Token details are missing. Please run 'Set-FabricHeaders' to configure them." -Level Error
-            throw #"ConfigurationException: Missing token details in the FabricConfig object."
+            throw "MissingTokenDetailsException: Token details are missing."
         }
 
         # Convert the TokenExpiresOn value to a DateTime object
@@ -49,7 +46,7 @@ function Is-TokenExpired {
         }
 
         # Log valid token status
-        #Write-Message -Message "Token is still valid. Expiry time: $($tokenExpiryDate.ToString("u"))" -Level Info
+        Write-Message -Message "Token is still valid. Expiry time: $($tokenExpiryDate.ToString("u"))" -Level Info
     } catch [System.FormatException] {
         Write-Message -Message "Invalid 'TokenExpiresOn' format in the FabricConfig object. Ensure it is a valid datetime string." -Level Error
         throw "FormatException: Invalid TokenExpiresOn value."
