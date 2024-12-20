@@ -48,7 +48,7 @@ function Remove-FabricEventhouse {
 
         # Step 3: Send DELETE request to API
         #Write-Message -Message "Sending API request to delete Eventhouse '$EventhouseId'..." -Level Info
-        $response = Invoke-WebRequest -Headers $FabricConfig.FabricHeaders -Uri $apiEndpointUrl -Method Delete -ErrorAction Stop
+        $response = Invoke-RestMethod -Headers $FabricConfig.FabricHeaders -Uri $apiEndpointUrl -Method Delete -ErrorAction Stop -SkipHttpErrorCheck -StatusCodeVariable "statusCode"
 
         # Step 4: Handle response
         $responseCode = $response.StatusCode

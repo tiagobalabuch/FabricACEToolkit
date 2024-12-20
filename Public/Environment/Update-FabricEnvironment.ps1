@@ -1,28 +1,28 @@
 <#
 .SYNOPSIS
-Updates the properties of a Fabric workspace.
+Updates the properties of a Fabric Environment.
 
 .DESCRIPTION
-The `Update-FabricWorkspace` function updates the name and/or description of a specified Fabric workspace by making a PATCH request to the API.
+The `Update-FabricEnvironment` function updates the name and/or description of a specified Fabric Environment by making a PATCH request to the API.
 
-.PARAMETER WorkspaceId
-The unique identifier of the workspace to be updated.
+.PARAMETER EnvironmentId
+The unique identifier of the Environment to be updated.
 
-.PARAMETER WorkspaceName
-The new name for the workspace.
+.PARAMETER EnvironmentName
+The new name for the Environment.
 
-.PARAMETER WorkspaceDescription
-(Optional) The new description for the workspace.
-
-.EXAMPLE
-Update-FabricWorkspace -WorkspaceId "workspace123" -WorkspaceName "NewWorkspaceName"
-
-Updates the name of the workspace with the ID "workspace123" to "NewWorkspaceName".
+.PARAMETER EnvironmentDescription
+(Optional) The new description for the Environment.
 
 .EXAMPLE
-Update-FabricWorkspace -WorkspaceId "workspace123" -WorkspaceName "NewName" -WorkspaceDescription "Updated description"
+Update-FabricEnvironment -EnvironmentId "Environment123" -EnvironmentName "NewEnvironmentName"
 
-Updates both the name and description of the workspace "workspace123".
+Updates the name of the Environment with the ID "Environment123" to "NewEnvironmentName".
+
+.EXAMPLE
+Update-FabricEnvironment -EnvironmentId "Environment123" -EnvironmentName "NewName" -EnvironmentDescription "Updated description"
+
+Updates both the name and description of the Environment "Environment123".
 
 .NOTES
 - Requires `$FabricConfig` global configuration, including `BaseUrl` and `FabricHeaders`.
@@ -32,21 +32,25 @@ Author: Tiago Balabuch
 Date: 2024-12-14
 #>
 
-function Update-FabricWorkspace {
+function Update-FabricEnvironment {
     [CmdletBinding()]
     param (
+        [Parameter(Mandatory = $false)]
+        [ValidateNotNullOrEmpty()]
+        [string]$WorkspaceId,   
+        
         [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
-        [string]$WorkspaceId,
+        [string]$EnvironmentId,
 
         [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
         [ValidatePattern('^[a-zA-Z0-9_ ]*$')]
-        [string]$WorkspaceName,
+        [string]$EnvironmentName,
 
         [Parameter(Mandatory = $false)]
         [ValidateNotNullOrEmpty()]
-        [string]$WorkspaceDescription
+        [string]$EnvironmentDescription
     )
 
     try {
@@ -56,16 +60,16 @@ function Update-FabricWorkspace {
         #Write-Message -Message "Token validation completed." -Level Info
 
         # Step 2: Construct the API URL
-        $apiEndpointUrl = "{0}/workspaces/{1}" -f $FabricConfig.BaseUrl, $WorkspaceId
+        $apiEndpointUrl = "{0}/workspaces/{1}/environments/{2}" -f $FabricConfig.BaseUrl, $WorkspaceId, $EnvironmentId
         Write-Message -Message "API Endpoint: $apiEndpointUrl" -Level Message
 
         # Step 3: Construct the request body
         $body = @{
-            displayName = $WorkspaceName
+            displayName = $EnvironmentName
         }
 
-        if ($WorkspaceDescription) {
-            $body.description = $WorkspaceDescription
+        if ($EnvironmentDescription) {
+            $body.description = $EnvironmentDescription
         }
 
         # Convert the body to JSON
@@ -84,12 +88,12 @@ function Update-FabricWorkspace {
         }
 
         # Step 6: Handle results
-        Write-Message -Message "Workspace '$WorkspaceName' updated successfully!" -Level Info
+        Write-Message -Message "Environment '$EnvironmentName' updated successfully!" -Level Info
         return $response
     }
     catch {
         # Step 7: Handle and log errors
         $errorDetails = $_.Exception.Message
-        Write-Message -Message "Failed to update workspace. Error: $errorDetails" -Level Error
+        Write-Message -Message "Failed to update Environment. Error: $errorDetails" -Level Error
     }
 }

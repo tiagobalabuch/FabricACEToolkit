@@ -66,18 +66,17 @@ function Add-FabricWorkspace {
         #Write-Message -Message "Request Body: $bodyJson" -Level Message
 
         # Step 4: Make the API request
-        Write-Message -Message "Sending API request to create Workspace '$WorkspaceName'..." -Level Message
         $response = Invoke-RestMethod -Headers $FabricConfig.FabricHeaders -Uri $apiEndpointUrl -Method Post -Body $bodyJson -ContentType "application/json" -ErrorAction Stop -SkipHttpErrorCheck -StatusCodeVariable "statusCode"
 
         # Step 5: Handle and log the response
         switch ($statusCode) {
             201 {
                 Write-Message -Message "Workspace '$WorkspaceName' created successfully!" -Level Info
-                return $response.value
+                return $response
             }
             202 {
                 Write-Message -Message "Workspace '$WorkspaceName' creation accepted. Provisioning in progress!" -Level Info
-                return $response.value
+                return $response
             }
             default {
                 Write-Message -Message "Unexpected response code: $statusCode" -Level Error

@@ -68,7 +68,6 @@ function Add-FabricEventhouse {
         #Write-Message -Message "Request Body: $bodyJson" -Level message
 
         # Step 4: Make the API request
-        Write-Message -Message "Sending API request to create Eventhouse '$EventhouseName'..." -Level Message
         $response = Invoke-RestMethod -Headers $FabricConfig.FabricHeaders -Uri $apiEndpointUrl -Method Post -Body $bodyJson -ContentType "application/json" -ErrorAction Stop -SkipHttpErrorCheck -StatusCodeVariable "statusCode"
 
         # Step 5: Handle and log the response

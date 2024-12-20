@@ -39,7 +39,7 @@ function Remove-FabricEnvironment {
     try {
         # Step 1: Ensure token validity
         #Write-Message -Message "Validating token..." -Level Info
-        Is-TokenExpired
+        Test-TokenExpired
         #Write-Message -Message "Token validation completed." -Level Info
 
         # Step 2: Construct the API URL
@@ -48,20 +48,21 @@ function Remove-FabricEnvironment {
 
         # Step 3: Send DELETE request to API
         #Write-Message -Message "Sending API request to delete environment '$EnvironmentId'..." -Level Info
-        $response = Invoke-WebRequest -Headers $FabricConfig.FabricHeaders -Uri $apiEndpointUrl -Method Delete -ErrorAction Stop
+        $response = Invoke-RestMethod -Headers $FabricConfig.FabricHeaders -Uri $apiEndpointUrl -Method Delete -ErrorAction Stop -SkipHttpErrorCheck -StatusCodeVariable "statusCode"
 
-        # Step 4: Handle response
-        $responseCode = $response.StatusCode
-        if ($responseCode -eq 200) {
-            Write-Message -Message "Environment '$EnvironmentId' deleted successfully from workspace '$WorkspaceId'." -Level Info
+        # Step 4: Validate the response code
+        if ($statusCode -ne 200) {
+            Write-Message -Message "Unexpected response code: $statusCode from the API." -Level Error
+            Write-Message -Message "Error: $($response.message)" -Level Error
+            Write-Message "Error Code: $($response.errorCode)" -Level Error
+            return $null
         }
-        else {
-            Write-Message -Message "Unexpected response code: $responseCode while attempting to delete environment '$EnvironmentId'." -Level Error
-        }
+        Write-Message -Message "Environment '$EnvironmentId' deleted successfully from workspace '$WorkspaceId'." -Level Info
+        
     }
     catch {
         # Step 5: Log and handle errors
         $errorDetails = $_.Exception.Message
-        Write-Message -Message "Failed to delete environment '$EnvironmentId'. Error: $errorDetails" -Level Error
+        Write-Message -Message "Failed to delete environment '$EnvironmentId' from workspace '$WorkspaceId'. Error: $errorDetails" -Level Error
     }
 }

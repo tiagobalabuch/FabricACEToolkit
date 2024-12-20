@@ -23,13 +23,16 @@ $capacity = Get-FabricCapacity -capacityName "tiagocapacity"
 Add-FabricWorkspace -WorkspaceName "Tiago API3" -WorkspaceDescription "API data workspace" -CapacityId $capacity.id
 
 # Update Workspace
-$workspace = Add-FabricWorkspace -WorkspaceName "Tiago AP4" 
+$workspace = Add-FabricWorkspace -WorkspaceName "Tiago AP54" 
+$workspace
 Update-FabricWorkspace -WorkspaceId $workspace.id -WorkspaceName "Tiago API4 UPDATED" -WorkspaceDescription "Updated description"
 #Remove-FabricWorkspace -WorkspaceId $workspace.id 
 
 # Remove Workspace 
-$workspace = Get-FabricWorkspace -WorkspaceName "Tiago API2"
-#####Remove-FabricWorkspace -WorkspaceId #$workspace.id 
+$workspace = Get-FabricWorkspace -WorkspaceName "Tiago AP54" 
+$workspace
+#####
+Remove-FabricWorkspace -WorkspaceId $workspace.id 
 $workspace = Get-FabricWorkspace -WorkspaceName "Tiago API3"
 ######Remove-FabricWorkspace -WorkspaceId $workspace.id 
 
@@ -78,8 +81,8 @@ $workspace = Get-FabricWorkspace -WorkspaceName "Tiago API"
 Add-FabricEventhouse -WorkspaceId $workspace.id -EventhouseName "EH01" -EventhouseDescription "EH Events"
 
 
-
-Get-FabricTenantSetting -SettingTitle "Users can create Fabric items"
+Get-FabricTenantSetting 
+Get-FabricTenantSetting  -SettingTitle "Users can create Fabric items"
 
 Get-FabricWorkspace
 

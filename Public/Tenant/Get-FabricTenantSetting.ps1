@@ -35,55 +35,52 @@ function Get-FabricTenantSetting {
     )
 
     try {
-        # Ensure the token is valid
-        Is-TokenExpired
+        # Step 1: Ensure token validity
+        #Write-Message -Message "Validating token..." -Level Info
+        Test-TokenExpired
+        #Write-Message -Message "Token validation completed." -Level Info
 
-        # Construct the API URL
+        # Step 2: Construct the API URL
         $apiEndpointUrl = "{0}/admin/tenantsettings" -f $FabricConfig.BaseUrl
-        Write-Message -Message "API Endpoint: $apiEndpointUrl" -Level Info
+        Write-Message -Message "API Endpoint: $apiEndpointUrl" -Level Message
 
-        # Make the API request
-        Write-Message -Message "Sending API request to retrieve tenant settings..." -Level Info
-        $response = Invoke-WebRequest -Headers $FabricConfig.FabricHeaders -Uri $apiEndpointUrl -Method Get -ErrorAction Stop
+        # Step 3: Make the API request
+        $response = Invoke-RestMethod -Headers $FabricConfig.FabricHeaders -Uri $apiEndpointUrl -Method Get -ErrorAction Stop -SkipHttpErrorCheck -StatusCodeVariable "statusCode"
 
-        # Validate and parse the response
-        if (-not $response.Content) {
-            Write-Message -Message "Empty response from the API." -Level Warning
-            return @()
+        # Step 4: Validate the response code
+        if ($statusCode -ne 200) {
+            Write-Message -Message "Unexpected response code: $statusCode from the API." -Level Error
+            Write-Message -Message "Error: $($response.message)" -Level Error
+            Write-Message "Error Code: $($response.errorCode)" -Level Error
+            return $null
         }
-
-        $responseCode = $response.StatusCode
-        Write-Message -Message "Response Code: $responseCode" -Level Info
-
-        if ($responseCode -eq 200) {
-            $data = $response.Content | ConvertFrom-Json
-
-            # Filter results if SettingTitle is provided
-            if ($SettingTitle) {
-                Write-Message -Message "Filtering tenant settings for title: $SettingTitle" -Level Info
-                $filteredSettings = $data.tenantSettings | Where-Object { $_.title -eq $SettingTitle }
-
-                if ($filteredSettings) {
-                    Write-Message -Message "Tenant setting found for title: $SettingTitle" -Level Info
-                    return $filteredSettings
-                }
-                else {
-                    Write-Message -Message "No tenant setting found with title: $SettingTitle" -Level Warning
-                    return $null
-                }
-            }
-            else {
-                Write-Message -Message "No filter applied. Returning all tenant settings." -Level Info
-                return $data.tenantSettings
-            }
+        
+        # Step 5: Handle empty response
+        if (-not $response) {
+            Write-Message -Message "No data returned from the API." -Level Warning
+            return $null
+        }
+        # Step 6: Filter results based on provided parameters
+        $settings = if ($SettingTitle) {
+            $response.tenantSettings | Where-Object { $_.title -eq $SettingTitle }
         }
         else {
-            Write-Message -Message "Unexpected response code: $responseCode received from API." -Level Error
-            return @()
+            # Return all workspaces if no filter is provided
+            Write-Message -Message "No filter provided. Returning all tenant settings." -Level Message
+            $response.tenantSettings
+        }
+
+        # Step 7: Handle results
+        if ($settings) {
+            return $settings
+        }
+        else {
+            Write-Message -Message "No tenant settings found matching the provided criteria." -Level Warning
+            return $null
         }
     }
     catch {
-        # Handle and log errors
+        # Step 8: Capture and log error details
         $errorDetails = $_.Exception.Message
         Write-Message -Message "Failed to retrieve tenant settings. Error: $errorDetails" -Level Error
     }

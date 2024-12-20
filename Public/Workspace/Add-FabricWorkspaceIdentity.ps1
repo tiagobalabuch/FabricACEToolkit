@@ -46,11 +46,11 @@ function Add-FabricWorkspaceIdentity {
         switch ($statusCode) {
             200 {
                 Write-Message -Message "Workspace identity was successfully provisioned for workspace '$WorkspaceId'." -Level Info
-                return $response.value
+                return $response
             }
             202 {
                 Write-Message -Message "Workspace identity provisioning accepted for workspace '$WorkspaceId'. Provisioning in progress!" -Level Info
-                return $response.value
+                return $response
             }
             default {
                 Write-Message -Message "Unexpected response code: $statusCode" -Level Error

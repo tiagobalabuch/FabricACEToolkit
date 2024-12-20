@@ -39,6 +39,7 @@ function Get-FabricWorkspace {
 
         [Parameter(Mandatory = $false)]
         [ValidateNotNullOrEmpty()]
+        [ValidatePattern('^[a-zA-Z0-9_ ]*$')]
         [string]$WorkspaceName
     )
 
@@ -69,7 +70,7 @@ function Get-FabricWorkspace {
             
         # Step 6: Handle empty response
         if (-not $response.value) {
-            Write-Message -Message "No capacities returned from the API." -Level Warning
+            Write-Message -Message "No data returned from the API." -Level Warning
             return $null
         }
 
@@ -83,7 +84,8 @@ function Get-FabricWorkspace {
         else {
             # Return all workspaces if no filter is provided
             Write-Message -Message "No filter provided. Returning all workspaces." -Level Info
-            return $response.value
+            #return 
+            $response.value
         }
             
         # Step 8: Handle results

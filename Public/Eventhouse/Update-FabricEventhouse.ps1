@@ -1,28 +1,28 @@
 <#
 .SYNOPSIS
-Updates the properties of a Fabric workspace.
+Updates the properties of a Fabric Eventhouse.
 
 .DESCRIPTION
-The `Update-FabricWorkspace` function updates the name and/or description of a specified Fabric workspace by making a PATCH request to the API.
+The `Update-FabricEventhouse` function updates the name and/or description of a specified Fabric Eventhouse by making a PATCH request to the API.
 
-.PARAMETER WorkspaceId
-The unique identifier of the workspace to be updated.
+.PARAMETER EventhouseId
+The unique identifier of the Eventhouse to be updated.
 
-.PARAMETER WorkspaceName
-The new name for the workspace.
+.PARAMETER EventhouseName
+The new name for the Eventhouse.
 
-.PARAMETER WorkspaceDescription
-(Optional) The new description for the workspace.
-
-.EXAMPLE
-Update-FabricWorkspace -WorkspaceId "workspace123" -WorkspaceName "NewWorkspaceName"
-
-Updates the name of the workspace with the ID "workspace123" to "NewWorkspaceName".
+.PARAMETER EventhouseDescription
+(Optional) The new description for the Eventhouse.
 
 .EXAMPLE
-Update-FabricWorkspace -WorkspaceId "workspace123" -WorkspaceName "NewName" -WorkspaceDescription "Updated description"
+Update-FabricEventhouse -EventhouseId "Eventhouse123" -EventhouseName "NewEventhouseName"
 
-Updates both the name and description of the workspace "workspace123".
+Updates the name of the Eventhouse with the ID "Eventhouse123" to "NewEventhouseName".
+
+.EXAMPLE
+Update-FabricEventhouse -EventhouseId "Eventhouse123" -EventhouseName "NewName" -EventhouseDescription "Updated description"
+
+Updates both the name and description of the Eventhouse "Eventhouse123".
 
 .NOTES
 - Requires `$FabricConfig` global configuration, including `BaseUrl` and `FabricHeaders`.
@@ -32,21 +32,25 @@ Author: Tiago Balabuch
 Date: 2024-12-14
 #>
 
-function Update-FabricWorkspace {
+function Update-FabricEventhouse {
     [CmdletBinding()]
     param (
+        [Parameter(Mandatory = $false)]
+        [ValidateNotNullOrEmpty()]
+        [string]$WorkspaceId,   
+        
         [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
-        [string]$WorkspaceId,
+        [string]$EventhouseId,
 
         [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
         [ValidatePattern('^[a-zA-Z0-9_ ]*$')]
-        [string]$WorkspaceName,
+        [string]$EventhouseName,
 
         [Parameter(Mandatory = $false)]
         [ValidateNotNullOrEmpty()]
-        [string]$WorkspaceDescription
+        [string]$EventhouseDescription
     )
 
     try {
@@ -56,16 +60,16 @@ function Update-FabricWorkspace {
         #Write-Message -Message "Token validation completed." -Level Info
 
         # Step 2: Construct the API URL
-        $apiEndpointUrl = "{0}/workspaces/{1}" -f $FabricConfig.BaseUrl, $WorkspaceId
+        $apiEndpointUrl = "{0}/workspaces/{1}/eventhouses/{2}" -f $FabricConfig.BaseUrl, $WorkspaceId, $EventhouseId
         Write-Message -Message "API Endpoint: $apiEndpointUrl" -Level Message
 
         # Step 3: Construct the request body
         $body = @{
-            displayName = $WorkspaceName
+            displayName = $EventhouseName
         }
 
-        if ($WorkspaceDescription) {
-            $body.description = $WorkspaceDescription
+        if ($EventhouseDescription) {
+            $body.description = $EventhouseDescription
         }
 
         # Convert the body to JSON
@@ -84,12 +88,12 @@ function Update-FabricWorkspace {
         }
 
         # Step 6: Handle results
-        Write-Message -Message "Workspace '$WorkspaceName' updated successfully!" -Level Info
+        Write-Message -Message "Eventhouse '$EventhouseName' updated successfully!" -Level Info
         return $response
     }
     catch {
         # Step 7: Handle and log errors
         $errorDetails = $_.Exception.Message
-        Write-Message -Message "Failed to update workspace. Error: $errorDetails" -Level Error
+        Write-Message -Message "Failed to update Eventhouse. Error: $errorDetails" -Level Error
     }
 }
