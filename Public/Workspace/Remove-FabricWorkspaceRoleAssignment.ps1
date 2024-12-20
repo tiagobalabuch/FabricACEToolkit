@@ -17,8 +17,8 @@ Remove-FabricWorkspaceRoleAssignment -WorkspaceId "workspace123" -WorkspaceRoleA
 Removes the role assignment with the ID "role123" from the workspace "workspace123".
 
 .NOTES
-- Requires the `$FabricConfig` global object, including `BaseUrl` and `FabricHeaders`.
-- Calls `Is-TokenExpired` to ensure the token is valid before making the API request.
+- Requires `$FabricConfig` global configuration, including `BaseUrl` and `FabricHeaders`.
+- Calls `Test-TokenExpired` to ensure token validity before making the API request.
 
 Author: Tiago Balabuch  
 Date: 2024-12-13
@@ -37,30 +37,31 @@ function Remove-FabricWorkspaceRoleAssignment {
     )
 
     try {
-        # Check if the token is expired
-        Is-TokenExpired
+        # Step 1: Ensure token validity
+        #Write-Message -Message "Validating token..." -Level Info
+        Test-TokenExpired
+        #Write-Message -Message "Token validation completed." -Level Info
 
-        # Construct the API URL
+        # Step 2: Construct the API URL
         $apiEndpointUrl = "{0}/workspaces/{1}/roleAssignments/{2}" -f $FabricConfig.BaseUrl, $WorkspaceId, $WorkspaceRoleAssignmentId
-        Write-Message -Message "API Endpoint: $apiEndpointUrl" -Level Info
+        Write-Message -Message "API Endpoint: $apiEndpointUrl" -Level Message
 
-        # Make the API request
-        $response = Invoke-WebRequest -Headers $FabricConfig.FabricHeaders -Uri $apiEndpointUrl -Method Delete -ErrorAction Stop
+        # Step 3: Make the API request
+        $response = Invoke-RestMethod -Headers $FabricConfig.FabricHeaders -Uri $apiEndpointUrl -Method Delete -ErrorAction Stop -SkipHttpErrorCheck -StatusCodeVariable "statusCode"
 
-        # Parse and log the response
-        $responseCode = $response.StatusCode
-        Write-Message -Message "Response Code: $responseCode" -Level Info
-
-        if ($responseCode -eq 200) {
-            Write-Message -Message "Role assignment '$WorkspaceRoleAssignmentId' successfully removed from workspace '$WorkspaceId'." -Level Info
-        } else {
-            Write-Message -Message "Unexpected response code: $responseCode while deleting the role assignment." -Level Error
+        # Step 4: Validate the response code
+        if ($statusCode -ne 200) {
+            Write-Message -Message "Unexpected response code: $statusCode from the API." -Level Error
+            Write-Message -Message "Error: $($response.message)" -Level Error
+            Write-Message "Error Code: $($response.errorCode)" -Level Error
+            return $null
         }
+        
+        Write-Message -Message "Role assignment '$WorkspaceRoleAssignmentId' successfully removed from workspace '$WorkspaceId'." -Level Info
     }
     catch {
-        # Handle and log errors
+        # Step 5: Capture and log error details
         $errorDetails = $_.Exception.Message
-        Write-Message -Message "Failed to remove role assignment. Error: $errorDetails" -Level Error
-        throw "Error removing role assignment: $errorDetails"
+        Write-Message -Message "Failed to remove role assignments for WorkspaceId '$WorkspaceId'. Error: $errorDetails" -Level Error
     }
 }

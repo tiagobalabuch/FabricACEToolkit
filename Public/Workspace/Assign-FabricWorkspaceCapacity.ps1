@@ -17,8 +17,8 @@ Assign-FabricWorkspaceCapacity -WorkspaceId "workspace123" -CapacityId "capacity
 Assigns the workspace with ID "workspace123" to the capacity "capacity456".
 
 .NOTES
-- Requires the `$FabricConfig` global object, including `BaseUrl` and `FabricHeaders`.
-- Calls `Is-TokenExpired` to ensure the token is valid before making the API request.
+- Requires `$FabricConfig` global configuration, including `BaseUrl` and `FabricHeaders`.
+- Calls `Test-TokenExpired` to ensure token validity before making the API request.
 
 Author: Tiago Balabuch  
 Date: 2024-12-14

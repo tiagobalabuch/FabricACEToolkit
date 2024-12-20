@@ -23,8 +23,8 @@ Add-FabricWorkspaceRoleAssignment -WorkspaceId "workspace123" -PrincipalId "prin
 Assigns the Admin role to the user with ID "principal123" in the workspace "workspace123".
 
 .NOTES
-- Requires the `$FabricConfig` global object, including `BaseUrl` and `FabricHeaders`.
-- Calls `Is-TokenExpired` to ensure the token is valid before making the API request.
+- Requires `$FabricConfig` global configuration, including `BaseUrl` and `FabricHeaders`.
+- Calls `Test-TokenExpired` to ensure token validity before making the API request.
 
 Author: Tiago Balabuch  
 Date: 2024-12-13
@@ -53,45 +53,52 @@ function Add-FabricWorkspaceRoleAssignment {
     )
 
     try {
-        # Check if the token is expired
-        Is-TokenExpired
+        # Step 1: Ensure token validity
+        #Write-Message -Message "Validating token..." -Level Info
+        Test-TokenExpired
+        #Write-Message -Message "Token validation completed." -Level Info
 
-        # Construct the API URL
+        # Step 2: Construct the API URL
         $apiEndpointUrl = "{0}/workspaces/{1}/roleAssignments" -f $FabricConfig.BaseUrl, $WorkspaceId
-        Write-Message -Message "API Endpoint: $apiEndpointUrl" -Level Info
+        Write-Message -Message "API Endpoint: $apiEndpointUrl" -Level Message
 
-        # Define the role assignment body
+        # Step 3: Construct the request body
         $body = @{
             principal = @{
                 id   = $PrincipalId
                 type = $PrincipalType
             }
-            role = $WorkspaceRole
+            role      = $WorkspaceRole
         }
 
         # Convert the body to JSON
         $bodyJson = $body | ConvertTo-Json -Depth 4
-        #Write-Message -Message "Request Body: $bodyJson" -Level Info
+        #Write-Message -Message "Request Body: $bodyJson" -Level Message
 
-        # Make the API request
-        $response = Invoke-WebRequest -Headers $FabricConfig.FabricHeaders -Uri $apiEndpointUrl -Method Post -Body $bodyJson -ContentType "application/json" -ErrorAction Stop
+        # Step 4: Make the API request
+        $response = Invoke-RestMethod -Headers $FabricConfig.FabricHeaders -Uri $apiEndpointUrl -Method Post -Body $bodyJson -ContentType "application/json" -ErrorAction Stop -SkipHttpErrorCheck -StatusCodeVariable "statusCode"
 
-        # Parse and log the response
-        $responseCode = $response.StatusCode
-        #Write-Message -Message "Response Code: $responseCode" -Level Info
-
-        if ($responseCode -eq 201) {
-            Write-Message -Message "Role '$WorkspaceRole' assigned to principal '$PrincipalId' successfully in workspace '$WorkspaceId'." -Level Info
-            return $response.Content | ConvertFrom-Json
-        } else {
-            Write-Message -Message "Unexpected response code: $responseCode while assigning role." -Level Error
+        # Step 5: Validate the response code
+        if ($statusCode -ne 201) {
+            Write-Message -Message "Unexpected response code: $statusCode from the API." -Level Error
+            Write-Message -Message "Error: $($response.message)" -Level Error
+            Write-Message "Error Code: $($response.errorCode)" -Level Error
             return $null
         }
+                
+        # Step 6: Handle empty response
+        if (-not $response) {
+            Write-Message -Message "No data returned from the API." -Level Warning
+            return $null
+        }
+
+        Write-Message -Message "Role '$WorkspaceRole' assigned to principal '$PrincipalId' successfully in workspace '$WorkspaceId'." -Level Info
+        return $response
+        
     }
     catch {
-        # Handle and log errors
+        # Step 7: Handle and log errors
         $errorDetails = $_.Exception.Message
         Write-Message -Message "Failed to assign role. Error: $errorDetails" -Level Error
-        #throw "Error assigning role: $errorDetails"
     }
 }

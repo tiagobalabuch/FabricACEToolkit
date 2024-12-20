@@ -29,20 +29,44 @@ Update-FabricWorkspace -WorkspaceId $workspace.id -WorkspaceName "Tiago API4 UPD
 
 # Remove Workspace 
 $workspace = Get-FabricWorkspace -WorkspaceName "Tiago API2"
-#Remove-FabricWorkspace -WorkspaceId #$workspace.id 
+#####Remove-FabricWorkspace -WorkspaceId #$workspace.id 
 $workspace = Get-FabricWorkspace -WorkspaceName "Tiago API3"
-#Remove-FabricWorkspace -WorkspaceId $workspace.id 
+######Remove-FabricWorkspace -WorkspaceId $workspace.id 
 
-
-# Assing Capacity
-
+# Workspace Assing Capacity
 $capacity = Get-FabricCapacity -capacityName "tiagocapacity"
 $workspace = Get-FabricWorkspace -WorkspaceName "Tiago API"
 Assign-FabricWorkspaceCapacity -WorkspaceId $workspace.id -CapacityId $capacity.id
 
-# Unassing Capacity
+# Workspace Unassing Capacity
 $workspace = Get-FabricWorkspace -WorkspaceName "Tiago API"
 Unassign-FabricWorkspaceCapacity -WorkspaceId $workspace.id 
+
+# Provision Workspace Identity
+$workspace = Get-FabricWorkspace -WorkspaceName "Tiago API"
+Add-FabricWorkspaceIdentity -WorkspaceId $workspace.id 
+
+# Deprovision Workspace Identity
+$workspace = Get-FabricWorkspace -WorkspaceName "Tiago API"
+Remove-FabricWorkspaceIdentity -WorkspaceId $workspace.id 
+
+# Get Workspace Role Assignments 
+$workspace = Get-FabricWorkspace -WorkspaceName "Tiago API"
+Get-FabricWorkspaceRoleAssignment -WorkspaceId $workspace.id
+
+# Workspace Add Role Assignments - Principal Id must be EntraID
+$workspace = Get-FabricWorkspace -WorkspaceName "Tiago API"
+Add-FabricWorkspaceRoleAssignment -WorkspaceId $workspace.id -PrincipalId "b5b9495c-685a-447a-b4d3-2d8e963e6288" -PrincipalType User -WorkspaceRole Admin
+
+# Update Workspace Role Assignments 
+$workspace = Get-FabricWorkspace -WorkspaceName "Tiago API"
+Get-FabricWorkspaceRoleAssignment -WorkspaceId $workspace.id
+Update-FabricWorkspaceRoleAssignment -WorkspaceId $workspace.id -WorkspaceRoleAssignmentId "b5b9495c-685a-447a-b4d3-2d8e963e6288" -WorkspaceRole Contributor
+
+# Remove Workspace Role Assignments 
+$workspace = Get-FabricWorkspace -WorkspaceName "Tiago API"
+Get-FabricWorkspaceRoleAssignment -WorkspaceId $workspace.id
+Remove-FabricWorkspaceRoleAssignment -WorkspaceId $workspace.id -WorkspaceRoleAssignmentId "b5b9495c-685a-447a-b4d3-2d8e963e6288"
 
 # Environment
 $workspace = Get-FabricWorkspace -WorkspaceName "Tiago API"
@@ -113,8 +137,27 @@ Add-FabricDomainWorkspaceByCapacity -DomainId $domain.id -capacitiesIds $capacit
 $workspace = Get-FabricWorkspace
 $workspace | Format-Table
 Add-FabricDomainWorkspaceById -DomainId $domain.id -WorkspaceId $workspace.id
+$body ='{
+    "role": "Admin",
+    "principal": {
+      "type": "User",
+      "id": "b5b9495c-685a-447a-b4d3-2d8e963e6288"
+    }
+  }'
 
-Invoke-WebRequest -Headers $FabricConfig.FabricHeaders -Uri "https://api.fabric.microsoft.com/v1/workspaces/915d192f-4118-4d83-bc06-781527eb42f2/roleAssignments" -Method Get -ErrorAction Stop
+  $body = @{
+    principal =  @{
+        id = "b5b9495c-685a-447a-b4d3-2d8e963e6288"
+        type = "User"
+    }
+    role = "Admin"
+}
+
+
+  $bodyJson = $body | ConvertTo-Json -Depth 2
+$a =Invoke-RestMethod -Headers $FabricConfig.FabricHeaders -Uri "https://api.fabric.microsoft.com/v1/workspaces/26cbd4ed-5920-4f2b-94ab-8e6ffbbdc48d/roleAssignments" -Method Post -Body $bodyJson -ContentType "application/json" -ErrorAction Stop -SkipHttpErrorCheck -StatusCodeVariable "statusCode"
+$statusCode
+$a
 
 $A = Invoke-WebRequest -Headers $FabricConfig.FabricHeaders -Uri "https://api.fabric.microsoft.com/v1/workspaces/915d192f-4118-4d83-bc06-781527eb42f2/roleAssignments" -Method Get -ErrorAction Stop
 

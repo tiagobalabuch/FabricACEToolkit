@@ -22,9 +22,8 @@ Get-FabricWorkspaceRoleAssignments -WorkspaceId "workspace123" -WorkspaceRoleAss
 Fetches the role assignment with the ID "role123" for the workspace "workspace123".
 
 .NOTES
-- Requires the `$FabricConfig` global object, including `BaseUrl` and `FabricHeaders`.
-- Calls `Is-TokenExpired` to ensure the token is valid before making the API request.
-- Returns the role assignments as a parsed JSON object.
+- Requires `$FabricConfig` global configuration, including `BaseUrl` and `FabricHeaders`.
+- Calls `Test-TokenExpired` to ensure token validity before making the API request.
 
 Author: Tiago Balabuch  
 Date: 2024-12-13
@@ -43,77 +42,71 @@ function Get-FabricWorkspaceRoleAssignment {
     )
 
     try {
-        # Check if the token is expired
-        Is-TokenExpired
+        # Step 1: Ensure token validity
+        #Write-Message -Message "Validating token..." -Level Info
+        Test-TokenExpired
+        #Write-Message -Message "Token validation completed." -Level Info
 
-        # Construct the API URL
+        # Step 2: Construct the API URL
         $apiEndpointUrl = "{0}/workspaces/{1}/roleAssignments" -f $FabricConfig.BaseUrl, $WorkspaceId
-        Write-Message -Message "API Endpoint: $apiEndpointUrl" -Level Info
+        Write-Message -Message "API Endpoint: $apiEndpointUrl" -Level Message
 
-        # Make the API request
-        $response = Invoke-WebRequest -Headers $FabricConfig.FabricHeaders -Uri $apiEndpointUrl -Method Get -ErrorAction Stop
+        # Step 3: Make the API request
+        $response = Invoke-RestMethod -Headers $FabricConfig.FabricHeaders -Uri $apiEndpointUrl -Method Get -ErrorAction Stop -SkipHttpErrorCheck -StatusCodeVariable "statusCode"
 
-        # Validate and parse the response
-        if (-not $response.Content) {
-            Write-Message -Message "No content returned from the API for WorkspaceId '$WorkspaceId'." -Level Warning
+        # Step 4: Validate the response code
+        if ($statusCode -ne 200) {
+            Write-Message -Message "Unexpected response code: $statusCode from the API." -Level Error
+            Write-Message -Message "Error: $($response.message)" -Level Error
+            Write-Message "Error Code: $($response.errorCode)" -Level Error
+            return $null
+        }
+        
+        # Step 5: Handle empty response
+        if (-not $response.value) {
+            Write-Message -Message "No data returned from the API." -Level Warning
             return @()
         }
 
-        $responseCode = $response.StatusCode
-        #Write-Message -Message "Response Code: $responseCode" -Level Info
+        # Step 7: Filter results based on provided parameters
+        $roleAssignments = if ($WorkspaceRoleAssignmentId) {
+            $response.value | Where-Object { $_.Id -eq $WorkspaceRoleAssignmentId }
+        }
+        else {
+            $response.value
+        }
 
-        if ($responseCode -eq 200) {
-            # Parse the response JSON
-            $data = $response.Content | ConvertFrom-Json
-            #Write-Message -Message "Successfully retrieved role assignments for WorkspaceId '$WorkspaceId'." -Level Info
-
-            if (-not $data.value) {
+        # Step 8: Handle results
+        if ($roleAssignments) {
+            Write-Message -Message "Found $($roleAssignments.Count) role assignments for WorkspaceId '$WorkspaceId'." -Level Message
+            # Transform data into custom objects
+            $results = foreach ($obj in $roleAssignments) {
+                [PSCustomObject]@{
+                    ID                = $obj.id
+                    PrincipalId       = $obj.principal.id
+                    DisplayName       = $obj.principal.displayName
+                    Type              = $obj.principal.type
+                    UserPrincipalName = $obj.principal.userDetails.userPrincipalName
+                    aadAppId          = $obj.principal.servicePrincipalDetails.aadAppId
+                    Role              = $obj.role
+                }
+            }
+            return $results
+        }
+        else {
+            if ($WorkspaceRoleAssignmentId) {
+                Write-Message -Message "No role assignment found with ID '$WorkspaceRoleAssignmentId' for WorkspaceId '$WorkspaceId'." -Level Warning
+            }
+            else {
                 Write-Message -Message "No role assignments found for WorkspaceId '$WorkspaceId'." -Level Warning
-                return @()
             }
-
-            # Filter results if WorkspaceRoleAssignmentId is provided
-            $roleAssignments = if ($WorkspaceRoleAssignmentId) {
-                $data.value | Where-Object { $_.Id -eq $WorkspaceRoleAssignmentId }
-            } else {
-                $data.value
-            }
-            
-            if ($roleAssignments) {
-                Write-Message -Message "Found $($roleAssignments.Count) role assignments for WorkspaceId '$WorkspaceId'." -Level Info
-                # Transform data into custom objects
-                $results = foreach ($obj in $roleAssignments) {
-                    [PSCustomObject]@{
-                        ID                 = $obj.id
-                        PrincipalId        = $obj.principal.id
-                        DisplayName        = $obj.principal.displayName
-                        Type               = $obj.principal.type
-                        UserPrincipalName  = $obj.principal.userDetails.userPrincipalName
-                        aadAppId           = $obj.principal.servicePrincipalDetails.aadAppId
-                        Role               = $obj.role
-                    }
-                }
-
-                return $results
-            } else {
-                if($WorkspaceRoleAssignmentId) {
-                    Write-Message -Message "No role assignment found with ID '$WorkspaceRoleAssignmentId' for WorkspaceId '$WorkspaceId'." -Level Warning
-                }
-                else {
-                    Write-Message -Message "No role assignments found for WorkspaceId '$WorkspaceId'." -Level Warning
-                }
-                return @()
-            }
-            
-        } else {
-            Write-Message -Message "Unexpected response code: $responseCode from the API." -Level Error
             return @()
         }
+            
     }
     catch {
-        # Handle and log errors
-        $errorDetails = Get-ErrorResponse($_.Exception)
+        # Step 9: Capture and log error details
+        $errorDetails = $_.Exception.Message
         Write-Message -Message "Failed to retrieve role assignments for WorkspaceId '$WorkspaceId'. Error: $errorDetails" -Level Error
-        #throw "Error retrieving role assignments: $errorDetails"
     }
 }

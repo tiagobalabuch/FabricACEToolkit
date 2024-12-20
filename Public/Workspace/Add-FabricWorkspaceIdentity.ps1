@@ -15,7 +15,7 @@ Provisions a Managed Identity for the workspace with ID "workspace123".
 
 .NOTES
 - Requires `$FabricConfig` global configuration, including `BaseUrl` and `FabricHeaders`.
-- Calls `Is-TokenExpired` to ensure the token is valid before making the API request.
+- Calls `Test-TokenExpired` to ensure token validity before making the API request.
 
 Author: Tiago Balabuch  
 Date: 2024-12-14
@@ -30,44 +30,38 @@ function Add-FabricWorkspaceIdentity {
     )
 
     try {
-        # Ensure token validity
-        Is-TokenExpired
+        # Step 1: Ensure token validity
+        #Write-Message -Message "Validating token..." -Level Info
+        Test-TokenExpired
+        #Write-Message -Message "Token validation completed." -Level Info
 
-        # Construct the API URL
+        # Step 2: Construct the API URL
         $apiEndpointUrl = "{0}/workspaces/{1}/provisionIdentity" -f $FabricConfig.BaseUrl, $WorkspaceId
-        Write-Message -Message "API Endpoint: $apiEndpointUrl" -Level Info
+        Write-Message -Message "API Endpoint: $apiEndpointUrl" -Level Message
 
-        # Make the API request
-        $response = Invoke-WebRequest -Headers $FabricConfig.FabricHeaders -Uri $apiEndpointUrl -Method Post -ContentType "application/json" -ErrorAction Stop
+        # Step 3: Make the API request
+        $response = Invoke-RestMethod -Headers $FabricConfig.FabricHeaders -Uri $apiEndpointUrl -Method Post -ContentType "application/json" -ErrorAction Stop -SkipHttpErrorCheck -StatusCodeVariable "statusCode"
 
-        # Parse and log the response
-        $responseCode = $response.StatusCode
-        Write-Message -Message "Response Code: $responseCode" -Level Info
-
-        if ($responseCode -eq 200 -or $responseCode -eq 202) {
-            $statusMessage = if ($responseCode -eq 200) {
-                "Workspace identity was successfully provisioned for workspace '$WorkspaceId'."
-            } else {
-                "Request accepted! Workspace identity provisioning is in progress for workspace '$WorkspaceId'."
+        # Step 4: Handle and log the response
+        switch ($statusCode) {
+            200 {
+                Write-Message -Message "Workspace identity was successfully provisioned for workspace '$WorkspaceId'." -Level Info
+                return $response.value
             }
-            Write-Message -Message $statusMessage -Level Info
-
-            # Parse and return content if available
-            if ($response.Content) {
-                return $response.Content | ConvertFrom-Json
-            } else {
-                return $null
+            202 {
+                Write-Message -Message "Workspace identity provisioning accepted for workspace '$WorkspaceId'. Provisioning in progress!" -Level Info
+                return $response.value
             }
-        } else {
-            # Handle unexpected response codes
-            Write-Message -Message "Unexpected response code: $responseCode while provisioning workspace identity." -Level Error
-            return $null
+            default {
+                Write-Message -Message "Unexpected response code: $statusCode" -Level Error
+                Write-Message -Message "Error details: $($response.message)" -Level Error
+                throw "API request failed with status code $statusCode."
+            }
         }
     }
     catch {
-        # Log and raise errors
+        # Step 5: Handle and log errors
         $errorDetails = $_.Exception.Message
         Write-Message -Message "Failed to provision workspace identity. Error: $errorDetails" -Level Error
-        #throw "Error provisioning workspace identity: $errorDetails"
     }
 }

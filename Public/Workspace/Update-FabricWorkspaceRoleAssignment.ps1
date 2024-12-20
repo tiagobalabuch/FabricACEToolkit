@@ -24,8 +24,8 @@ Update-FabricWorkspaceRoleAssignment -WorkspaceId "workspace123" -WorkspaceRoleA
 Updates the role assignment to "Admin" for the specified workspace and role assignment.
 
 .NOTES
-- Requires the `$FabricConfig` global object, including `BaseUrl` and `FabricHeaders`.
-- Calls `Is-TokenExpired` to ensure the token is valid before making the API request.
+- Requires `$FabricConfig` global configuration, including `BaseUrl` and `FabricHeaders`.
+- Calls `Test-TokenExpired` to ensure token validity before making the API request.
 
 Author: Tiago Balabuch  
 Date: 2024-12-14
@@ -49,14 +49,16 @@ function Update-FabricWorkspaceRoleAssignment {
     )
 
     try {
-        # Ensure token validity
-        Is-TokenExpired
+        # Step 1: Ensure token validity
+        #Write-Message -Message "Validating token..." -Level Info
+        Test-TokenExpired
+        #Write-Message -Message "Token validation completed." -Level Info
 
-        # Construct the API URL
+        # Step 2: Construct the API URL
         $apiEndpointUrl = "{0}/workspaces/{1}/roleAssignments/{2}" -f $FabricConfig.BaseUrl, $WorkspaceId, $WorkspaceRoleAssignmentId
-        Write-Message -Message "API Endpoint: $apiEndpointUrl" -Level Info
+        Write-Message -Message "API Endpoint: $apiEndpointUrl" -Level Message
 
-        # Prepare the request body
+        # Step 3: Construct the request body
         $body = @{
             role = $WorkspaceRole
         }
@@ -65,25 +67,33 @@ function Update-FabricWorkspaceRoleAssignment {
         $bodyJson = $body | ConvertTo-Json -Depth 4 -Compress
         #Write-Message -Message "Request Body: $bodyJson" -Level Info
 
-        # Send the API request
-        $response = Invoke-WebRequest -Headers $FabricConfig.FabricHeaders -Uri $apiEndpointUrl -Method Patch -Body $bodyJson -ContentType "application/json" -ErrorAction Stop
+        # Step 4: Make the API request
+        $response = Invoke-RestMethod -Headers $FabricConfig.FabricHeaders -Uri $apiEndpointUrl -Method Patch -Body $bodyJson -ContentType "application/json" -ErrorAction Stop -SkipHttpErrorCheck -StatusCodeVariable "statusCode"
 
-        # Evaluate the response
-        $responseCode = $response.StatusCode
-        #Write-Message -Message "Response Code: $responseCode" -Level Info
-
-        if ($responseCode -eq 200) {
-            Write-Message -Message "Role assignment updated successfully in workspace '$WorkspaceId'." -Level Info
-            return $response.Content | ConvertFrom-Json
-        } else {
-            Write-Message -Message "Unexpected response code: $responseCode while updating role assignment." -Level Error
+        # Step 5: Validate the response code
+        if ($statusCode -ne 200) {
+            Write-Message -Message "Unexpected response code: $statusCode from the API." -Level Error
+            Write-Message -Message "Error: $($response.message)" -Level Error
+            Write-Message "Error Code: $($response.errorCode)" -Level Error
             return $null
         }
+                    
+        # Step 6: Handle empty response
+        if (-not $response) {
+            Write-Message -Message "No data returned from the API." -Level Warning
+            return $null
+        }
+    
+        Write-Message -Message "Role assignment $WorkspaceRoleAssignmentId updated successfully in workspace '$WorkspaceId'." -Level Info
+        return $response
+            
     }
     catch {
         # Log and handle errors
         $errorDetails = $_.Exception.Message
         Write-Message -Message "Failed to update role assignment. Error: $errorDetails" -Level Error
-        #throw "Error updating role assignment: $errorDetails"
+        # Step 7: Handle and log errors
+        $errorDetails = $_.Exception.Message
+        Write-Message -Message "Failed to update role assignment. Error: $errorDetails" -Level Error
     }
 }

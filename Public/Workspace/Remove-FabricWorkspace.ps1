@@ -14,10 +14,8 @@ Remove-FabricWorkspace -WorkspaceId "workspace123"
 Deletes the workspace with the ID "workspace123".
 
 .NOTES
-- Requires the `$FabricConfig` global object, including `BaseUrl` and `FabricHeaders`.
-- Calls `Is-TokenExpired` to ensure the token is valid before making the API request.
-- Logs each step of the operation for debugging and monitoring purposes.
-- Supports response codes `200` (OK) and `204` (No Content) as successful deletion.
+- Requires `$FabricConfig` global configuration, including `BaseUrl` and `FabricHeaders`.
+- Calls `Test-TokenExpired` to ensure token validity before making the API request.
 
 Author: Tiago Balabuch  
 Date: 2024-12-12

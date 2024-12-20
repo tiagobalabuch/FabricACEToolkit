@@ -25,8 +25,8 @@ Update-FabricWorkspace -WorkspaceId "workspace123" -WorkspaceName "NewName" -Wor
 Updates both the name and description of the workspace "workspace123".
 
 .NOTES
-- Requires the `$FabricConfig` global object, including `BaseUrl` and `FabricHeaders`.
-- Calls `Is-TokenExpired` to ensure the token is valid before making the API request.
+- Requires `$FabricConfig` global configuration, including `BaseUrl` and `FabricHeaders`.
+- Calls `Test-TokenExpired` to ensure token validity before making the API request.
 
 Author: Tiago Balabuch  
 Date: 2024-12-14
