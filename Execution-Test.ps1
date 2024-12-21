@@ -72,8 +72,57 @@ Get-FabricWorkspaceRoleAssignment -WorkspaceId $workspace.id
 Remove-FabricWorkspaceRoleAssignment -WorkspaceId $workspace.id -WorkspaceRoleAssignmentId "b5b9495c-685a-447a-b4d3-2d8e963e6288"
 
 # Environment
+
+## Add Environment
 $workspace = Get-FabricWorkspace -WorkspaceName "Tiago API"
-Add-FabricEnvironment -WorkspaceId $workspace.id -EnvironmentName "DevEnv7" -EnvironmentDescription "Development Environment"
+Add-FabricEnvironment -WorkspaceId $workspace.id -EnvironmentName "DevEnv01" -EnvironmentDescription "Development Environment"
+
+## Get Environment 
+Get-FabricEnvironment -WorkspaceId $workspace.id
+Get-FabricEnvironment -WorkspaceId $workspace.id -EnvironmentName "DevEnv" 
+Get-FabricEnvironment -WorkspaceId $workspace.id -EnvironmentId "0c06e50a-141e-4ecc-970c-121c6e07521c"
+
+## Update Environment
+$env = Get-FabricEnvironment -WorkspaceId $workspace.id -EnvironmentName "DevEnv" 
+Update-FabricEnvironment -WorkspaceId $workspace.id -EnvironmentId $env.id -EnvironmentName "DevEnv Updated" -EnvironmentDescription "Development Environment Updated"
+
+## Remove Environment
+#Remove-FabricEnvironment -WorkspaceId $workspace.id -EnvironmentId $env.id
+
+## Get Spark Compute
+Get-FabricEnvironmentSparkCompute -WorkspaceId $workspace.id -EnvironmentId $env.id
+
+## Get Staging  Spark Compute
+Get-FabricEnvironmentStagingSparkCompute -WorkspaceId $workspace.id -EnvironmentId $env.id
+
+## Updated Staging Spark Compute
+Update-FabricEnvironmentStagingSparkCompute -WorkspaceId $workspace.id -EnvironmentId $env.id -InstancePoolName "MySparkPool" -InstancePoolType "Workspace" -DriverCores 4 -DriverMemory "28g" -ExecutorCores 4 -ExecutorMemory "28g" -DynamicExecutorAllocationEnabled $true -DynamicExecutorAllocationMinExecutors 1 -DynamicExecutorAllocationMaxExecutors 1 -RuntimeVersion "1.3" -SparkProperties @{"spark.dynamicAllocation.executorAllocationRatio" =1.1}    
+
+## Publish Environment
+Publish-FabricEnvironment -WorkspaceId $workspace.id -EnvironmentId $env.id
+
+## Stop Publish Environment
+Stop-FabricEnvironmentPublish -WorkspaceId $workspace.id -EnvironmentId $env.id
+
+## Get Environment Staging Library
+Get-FabricEnvironmentStagingLibrary -WorkspaceId $workspace.id -EnvironmentId $env.id
+
+## Get Environment Library
+Get-FabricEnvironmentLibrary -WorkspaceId $workspace.id -EnvironmentId $env.id
+
+## Upload Environment Staging Library
+## This is not working
+Upload-FabricEnvironmentStagingLibrary -WorkspaceId $workspace.id -EnvironmentId $env.id
+
+## Remove Environment Staging Library
+Remove-FabricEnvironmentStagingLibrary -WorkspaceId $workspace.id -EnvironmentId $env.id -LibraryName "datagenerator-0.1-py3-none-any.whl"
+
+$apiEndpointUrl = "https://api.fabric.microsoft.com/v1/workspaces/26cbd4ed-5920-4f2b-94ab-8e6ffbbdc48d/environments/eddddf9b-b134-47cb-bd17-6cb05e4567e7/sparkcompute"
+$response = Invoke-RestMethod -Headers $FabricConfig.FabricHeaders -Uri $apiEndpointUrl -Method Get -ErrorAction Stop -SkipHttpErrorCheck -StatusCodeVariable "statusCode"
+
+$response
+
+
 
 
 # Eventhouse

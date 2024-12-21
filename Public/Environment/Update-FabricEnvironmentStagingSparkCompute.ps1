@@ -52,7 +52,6 @@ function Update-FabricEnvironmentStagingSparkCompute {
         [string]$RuntimeVersion,
 
         [Parameter(Mandatory = $true)]
-        [ValidateNotNullOrEmpty()]
         [System.Object]$SparkProperties
 
     )

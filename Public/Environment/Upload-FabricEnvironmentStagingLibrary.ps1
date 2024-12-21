@@ -1,4 +1,4 @@
-function Update-FabricEnvironmentStagingSparkCompute {
+function Upload-FabricEnvironmentStagingLibrary {
     [CmdletBinding()]
     param (
         [Parameter(Mandatory = $true)]

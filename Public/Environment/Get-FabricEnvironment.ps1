@@ -62,7 +62,7 @@ function Get-FabricEnvironment {
 
         # Step 3: Construct the API URL
         $apiEndpointUrl = "{0}/workspaces/{1}/environments" -f $FabricConfig.BaseUrl, $WorkspaceId
-        Write-Message -Message "API Endpoint: $apiEndpointUrl" -Level Info
+        Write-Message -Message "API Endpoint: $apiEndpointUrl" -Level Message
 
         # Step 4: Make the API request
         #Write-Message -Message "Sending API request to retrieve environments..." -Level Info
@@ -84,15 +84,15 @@ function Get-FabricEnvironment {
        
         # Step 7: Filter results based on provided parameters
         $environment = if ($EnvironmentId) {
-            $response | Where-Object { $_.Id -eq $EnvironmentId }
+            $response.value | Where-Object { $_.Id -eq $EnvironmentId }
         }
         elseif ($EnvironmentName) {
-            $response | Where-Object { $_.DisplayName -eq $EnvironmentName }
+            $response.value | Where-Object { $_.DisplayName -eq $EnvironmentName }
         }
         else {
             # Return all workspaces if no filter is provided
             Write-Message -Message "No filter provided. Returning all environments." -Level Info
-            $response
+            $response.value
         }
 
         # Step 8: Handle results

@@ -19,7 +19,7 @@ function Get-FabricEnvironmentStagingLibrary {
 
         # Step 2: Construct the API URL
         $apiEndpointUrl = "{0}/workspaces/{1}/environments/{2}/staging/libraries" -f $FabricConfig.BaseUrl, $WorkspaceId, $EnvironmentId
-        Write-Message -Message "API Endpoint: $apiEndpointUrl" -Level Info
+        Write-Message -Message "API Endpoint: $apiEndpointUrl" -Level Message
 
         # Step 3: Make the API request
         $response = Invoke-RestMethod -Headers $FabricConfig.FabricHeaders -Uri $apiEndpointUrl -Method Get -ErrorAction Stop -SkipHttpErrorCheck -StatusCodeVariable "statusCode"
@@ -33,7 +33,7 @@ function Get-FabricEnvironmentStagingLibrary {
         }
                     
         # Step 5: Handle results
-        return $response
+        return $response.customLibraries
     }
     catch {
         # Step 6: Capture and log error details

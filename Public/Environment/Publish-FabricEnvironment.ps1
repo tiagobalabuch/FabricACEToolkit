@@ -17,7 +17,7 @@ function Publish-FabricEnvironment {
         #Write-Message -Message "Token validation completed." -Level Info
 
         # Step 2: Construct the API URL
-        $apiEndpointUrl = "{0}/workspaces/{1}/environments{2}/staging/publish" -f $FabricConfig.BaseUrl, $WorkspaceId, $EnvironmentId
+        $apiEndpointUrl = "{0}/workspaces/{1}/environments/{2}/staging/publish" -f $FabricConfig.BaseUrl, $WorkspaceId, $EnvironmentId
         Write-Message -Message "API Endpoint: $apiEndpointUrl" -Level Message
 
         # Step 3: Make the API request
@@ -27,11 +27,11 @@ function Publish-FabricEnvironment {
         switch ($statusCode) {
             200 {
                 Write-Message -Message "Publish operation request has been submitted successfully for the environment '$EnvironmentId'!" -Level Info
-                return $response
+                return $response.publishDetails
             }
             202 {
                 Write-Message -Message "Publish operation accepted. Publishing in progress!" -Level Info
-                return $response
+                return $response.publishDetails
             }
             default {
                 Write-Message -Message "Unexpected response code: $statusCode" -Level Error
