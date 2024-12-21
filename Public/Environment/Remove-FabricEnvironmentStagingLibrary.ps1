@@ -1,30 +1,5 @@
-<#
-.SYNOPSIS
-Deletes an environment from a specified workspace in Microsoft Fabric.
-
-.DESCRIPTION
-The `Remove-FabricEnvironment` function sends a DELETE request to the Fabric API to remove a specified environment from a given workspace.
-
-.PARAMETER WorkspaceId
-(Mandatory) The ID of the workspace containing the environment to delete.
-
-.PARAMETER EnvironmentId
-(Mandatory) The ID of the environment to be deleted.
-
-.EXAMPLE
-Remove-FabricEnvironment -WorkspaceId "12345" -EnvironmentId "67890"
-
-Deletes the environment with ID "67890" from workspace "12345".
-
-.NOTES
-- Requires `$FabricConfig` global configuration, including `BaseUrl` and `FabricHeaders`.
-- Validates token expiration before making the API request.
-
-Author: Tiago Balabuch  
-Date: 2024-12-15
-#>
-
-function Remove-FabricEnvironment {
+#Deletes a library from environment. It supports deleting one file at a time.
+function Remove-FabricEnvironmentStagingLibrary {
     [CmdletBinding()]
     param (
         [Parameter(Mandatory = $true)]
@@ -33,7 +8,11 @@ function Remove-FabricEnvironment {
 
         [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
-        [string]$EnvironmentId
+        [string]$EnvironmentId,
+        
+        [Parameter(Mandatory = $true)]
+        [ValidateNotNullOrEmpty()]
+        [string]$LibraryName
     )
 
     try {
@@ -43,7 +22,7 @@ function Remove-FabricEnvironment {
         #Write-Message -Message "Token validation completed." -Level Info
 
         # Step 2: Construct the API URL
-        $apiEndpointUrl = "{0}/workspaces/{1}/environments/{2}" -f $FabricConfig.BaseUrl, $WorkspaceId, $EnvironmentId
+        $apiEndpointUrl = "{0}/workspaces/{1}/environments/{2}/staging/libraries?libraryToDelete={3}" -f $FabricConfig.BaseUrl, $WorkspaceId, $EnvironmentId, $LibraryName
         Write-Message -Message "API Endpoint: $apiEndpointUrl" -Level Info
 
         # Step 3: Make the API request
@@ -56,7 +35,7 @@ function Remove-FabricEnvironment {
             Write-Message "Error Code: $($response.errorCode)" -Level Error
             return $null
         }
-        Write-Message -Message "Environment '$EnvironmentId' deleted successfully from workspace '$WorkspaceId'." -Level Info
+        Write-Message -Message "Staging library $LibraryName for the Environment '$EnvironmentId' deleted successfully from workspace '$WorkspaceId'." -Level Info
         
     }
     catch {
