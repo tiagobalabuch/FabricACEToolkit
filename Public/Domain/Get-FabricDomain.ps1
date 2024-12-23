@@ -26,7 +26,7 @@ Fetches the domain with the display name "Finance".
 
 .NOTES
 - Requires `$FabricConfig` global configuration, including `BaseUrl` and `FabricHeaders`.
-- The function handles ambiguous input for both `DomainId` and `DomainName`.
+- Calls `Test-TokenExpired` to ensure token validity before making the API request.
 
 Author: Tiago Balabuch  
 Date: 2024-12-14
@@ -48,70 +48,67 @@ function Get-FabricDomain {
     )
 
     try {
-        # Handle ambiguous input
+        # Step 1: Handle ambiguous input
         if ($DomainId -and $DomainName) {
             Write-Message -Message "Both 'DomainId' and 'DomainName' were provided. Please specify only one." -Level Error
             return @()
         }
 
-        # Check if the token is expired
-        Is-TokenExpired
+        # Step 2: Ensure token validity
+        #Write-Message -Message "Validating token..." -Level Info
+        Test-TokenExpired
+        #Write-Message -Message "Token validation completed." -Level Info
 
-        # Construct the API URL with filtering logic        
+        # Step 3: Construct the API URL with filtering logic        
         $apiEndpointUrl = "{0}/admin/domains" -f $FabricConfig.BaseUrl
         if ($NonEmptyDomainsOnly) {
             $apiEndpointUrl = "{0}?nonEmptyOnly=true" -f $apiEndpointUrl
         }
-        Write-Message -Message "API Endpoint: $apiEndpointUrl" -Level Info
+        Write-Message -Message "API Endpoint: $apiEndpointUrl" -Level Message
 
-        # Make the API request
-        $response = Invoke-WebRequest -Headers $FabricConfig.FabricHeaders -Uri $apiEndpointUrl -Method Get -ErrorAction Stop
+        # Step 4: Make the API request
+        $response = Invoke-RestMethod -Headers $FabricConfig.FabricHeaders -Uri $apiEndpointUrl -Method Get -ErrorAction Stop -SkipHttpErrorCheck -StatusCodeVariable "statusCode"
 
-        # Validate the response
-        if (-not $response.Content) {
-            Write-Message -Message "Empty response from the API." -Level Warning
-            return @()
+        # Step 5: Validate the response code
+        if ($statusCode -ne 200) {
+            Write-Message -Message "Unexpected response code: $statusCode from the API." -Level Error
+            Write-Message -Message "Error: $($response.message)" -Level Error
+            Write-Message "Error Code: $($response.errorCode)" -Level Error
+            return $null
+        }
+                    
+        # Step 6: Handle empty response
+        if (-not $response) {
+            Write-Message -Message "No data returned from the API." -Level Warning
+            return $null
         }
 
-        $responseCode = $response.StatusCode
-        #Debug
-        #Write-Message -Message "Response Code: $responseCode" -Level Info
 
-        if ($responseCode -eq 200) {
-            # Parse the response
-            $data = $response.Content | ConvertFrom-Json
-
-            # Filter results based on provided parameters
-            $domains = if ($DomainId) {
-                $data.domains | Where-Object { $_.Id -eq $DomainId }
-            }
-            elseif ($DomainName) {
-                $data.domains | Where-Object { $_.DisplayName -eq $DomainName }
-            }
-            else {
-                # Return all domains if no filter is provided
-                Write-Message -Message "No filter provided. Returning all domains." -Level Info
-                return $data.domains
-            }
-
-            if ($domains) {
-                return $domains
-            }
-            else {
-                Write-Message -Message "No domain found matching the provided criteria." -Level Warning
-                return $null
-            }
+        # Step 7: Filter results based on provided parameters
+        $domains = if ($DomainId) {
+            $response.domains | Where-Object { $_.Id -eq $DomainId }
+        }
+        elseif ($DomainName) {
+            $response.domains | Where-Object { $_.DisplayName -eq $DomainName }
         }
         else {
-            Write-Message -Message "Unexpected response code: $responseCode from the API." -Level Error
-            return @()
+            # Return all domains if no filter is provided
+            Write-Message -Message "No filter provided. Returning all domains." -Level Message
+            return $response.domains
+        }
+
+        # Step 8: Handle results
+        if ($domains) {
+            return $domains
+        }
+        else {
+            Write-Message -Message "No domain found matching the provided criteria." -Level Warning
+            return $null
         }
     }
     catch {
-        # Handle and log errors
-        $errorDetails = Get-ErrorResponse($_.Exception)
-        #$errorDetails = $_.Exception.Message
-        Write-Message -Message "Failed to retrieve domain. Error: $errorDetails" -Level Error
-        #throw "Error retrieving workspace details: $errorDetails"
+        # Step 9: Capture and log error details
+        $errorDetails = $_.Exception.Message
+        Write-Message -Message "Failed to retrieve environment. Error: $errorDetails" -Level Error
     }
 }

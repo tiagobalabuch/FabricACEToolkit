@@ -21,7 +21,7 @@ Creates a "Finance" domain under the parent domain with ID "12345".
 
 .NOTES
 - Requires `$FabricConfig` global configuration, including `BaseUrl` and `FabricHeaders`.
-- Calls `Is-TokenExpired` to ensure token validity before making the API request.
+- Calls `Test-TokenExpired` to ensure token validity before making the API request.
 
 Author: Tiago Balabuch  
 Date: 2024-12-14
@@ -35,7 +35,7 @@ function Add-FabricDomain {
         [ValidatePattern('^[a-zA-Z0-9_ ]*$')]
         [string]$DomainName,
 
-        [Parameter(Mandatory = $true)]
+        [Parameter(Mandatory = $false)]
         [ValidateNotNullOrEmpty()]
         [string]$DomainDescription,
 
@@ -45,17 +45,22 @@ function Add-FabricDomain {
     )
 
     try {
-        # Ensure token validity
-        Is-TokenExpired
+        # Step 1: Ensure token validity
+        #Write-Message -Message "Validating token..." -Level Info
+        Test-TokenExpired
+        #Write-Message -Message "Token validation completed." -Level Info
 
-        # Construct the API URL
+        # Step 3: Construct the request body
         $apiEndpointUrl = "{0}/admin/domains" -f $FabricConfig.BaseUrl
-        Write-Message -Message "API Endpoint: $apiEndpointUrl" -Level Info
+        Write-Message -Message "API Endpoint: $apiEndpointUrl" -Level Message
 
         # Construct the request body
         $body = @{
             displayName = $DomainName
-            description = $DomainDescription
+        }
+
+        if ($DomainDescription) {
+            $body.description = $DomainDescription
         }
 
         if ($ParentDomainId) {
@@ -66,27 +71,30 @@ function Add-FabricDomain {
         $bodyJson = $body | ConvertTo-Json -Depth 2
         #Write-Message -Message "Request Body: $bodyJson" -Level Info
 
-        # Make the API request
-        $response = Invoke-WebRequest -Headers $FabricConfig.FabricHeaders -Uri $apiEndpointUrl -Method Post -Body $bodyJson -ContentType "application/json" -ErrorAction Stop
+        # Step 4: Make the API request
+        $response = Invoke-RestMethod -Headers $FabricConfig.FabricHeaders -Uri $apiEndpointUrl -Method Post -Body $bodyJson -ContentType "application/json" -ErrorAction Stop -SkipHttpErrorCheck -StatusCodeVariable "statusCode"
 
-        # Handle response
-        $responseCode = $response.StatusCode
-        #Write-Message -Message "Response Code: $responseCode" -Level Info
-
-        $data = $response.Content | ConvertFrom-Json
-
-        if ($responseCode -eq 201) {
-            Write-Message -Message "Domain '$DomainName' created successfully!" -Level Info
-            return $data
-        } else {
-            Write-Message -Message "Unexpected response code: $responseCode while creating domain." -Level Error
-            return $null
+        
+        # Step 5: Handle and log the response
+        switch ($statusCode) {
+            201 {
+                Write-Message -Message "Domain '$DomainName' created successfully!" -Level Info
+                return $response
+            }
+            202 {
+                Write-Message -Message "Domain '$DomainName' creation accepted. Provisioning in progress!" -Level Info
+                return $response
+            }
+            default {
+                Write-Message -Message "Unexpected response code: $statusCode" -Level Error
+                Write-Message -Message "Error details: $($response.message)" -Level Error
+                throw "API request failed with status code $statusCode."
+            }
         }
     }
     catch {
-        # Log error details
+        # Step 6: Handle and log errors
         $errorDetails = $_.Exception.Message
         Write-Message -Message "Failed to create domain. Error: $errorDetails" -Level Error
-        #throw "Error creating domain: $errorDetails"
     }
 }

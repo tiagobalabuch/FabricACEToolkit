@@ -48,7 +48,6 @@ function Get-FabricEnvironment {
     )
 
     try {
-
         # Step 1: Handle ambiguous input
         if ($EnvironmentId -and $EnvironmentName) {
             Write-Message -Message "Both 'EnvironmentId' and 'EnvironmentName' were provided. Please specify only one." -Level Error
@@ -65,7 +64,6 @@ function Get-FabricEnvironment {
         Write-Message -Message "API Endpoint: $apiEndpointUrl" -Level Message
 
         # Step 4: Make the API request
-        #Write-Message -Message "Sending API request to retrieve environments..." -Level Info
         $response = Invoke-RestMethod -Headers $FabricConfig.FabricHeaders -Uri $apiEndpointUrl -Method Get -ErrorAction Stop -SkipHttpErrorCheck -StatusCodeVariable "statusCode"
 
         # Step 5: Validate the response code

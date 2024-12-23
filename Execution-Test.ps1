@@ -117,25 +117,13 @@ Upload-FabricEnvironmentStagingLibrary -WorkspaceId $workspace.id -EnvironmentId
 ## Remove Environment Staging Library
 Remove-FabricEnvironmentStagingLibrary -WorkspaceId $workspace.id -EnvironmentId $env.id -LibraryName "datagenerator-0.1-py3-none-any.whl"
 
-$apiEndpointUrl = "https://api.fabric.microsoft.com/v1/workspaces/26cbd4ed-5920-4f2b-94ab-8e6ffbbdc48d/environments/eddddf9b-b134-47cb-bd17-6cb05e4567e7/sparkcompute"
-$response = Invoke-RestMethod -Headers $FabricConfig.FabricHeaders -Uri $apiEndpointUrl -Method Get -ErrorAction Stop -SkipHttpErrorCheck -StatusCodeVariable "statusCode"
-
-$response
-
-
-
-
 # Eventhouse
 $workspace = Get-FabricWorkspace -WorkspaceName "Tiago API"
 Add-FabricEventhouse -WorkspaceId $workspace.id -EventhouseName "EH01" -EventhouseDescription "EH Events"
 
-
+# Get Tenant Setting
 Get-FabricTenantSetting 
 Get-FabricTenantSetting  -SettingTitle "Users can create Fabric items"
-
-Get-FabricWorkspace
-
-
 
 
 
@@ -166,158 +154,65 @@ $workspace = Get-FabricWorkspace -WorkspaceName "Tiago API 152"
 Add-FabricWorkspaceIdentity -WorkspaceId $workspace.id
 Remove-FabricWorkspaceIdentity -WorkspaceId $workspace.id
 
-# domain
-Get-FabricDomain | Format-Table
-$domain = Add-FabricDomain -DomainName "API" -DomainDescription "API data domain"
+# Domain
+
+## Add Domain
+
+Add-FabricDomain -DomainName "API1" 
+Add-FabricDomain -DomainName "API2" -DomainDescription "API data domain"
+Add-FabricDomain -DomainName "API3" -DomainDescription "API data domain" -ParentDomainId "e2e8530e-bdad-468a-9634-7c5dd10ab703"
+Add-FabricDomain -DomainName "API4" -ParentDomainId "e2e8530e-bdad-468a-9634-7c5dd10ab703"
+
+## Get Domain
+Get-FabricDomain 
+Get-FabricDomain -DomainId "5a785af7-0155-4d27-b944-36c33e6c69e4"
+Get-FabricDomain -DomainName "API1"
+
+## Update Domain
+$domain = Get-FabricDomain -DomainName "API4"
 Update-FabricDomain -DomainId $domain.id -DomainName "API Updated" -DomainDescription "API data domain updated"
+
+## Remove Domain
 $domain = Get-FabricDomain -DomainName "API Updated"
-
-
-Get-FabricDomainWorkspace -DomainId $domain.id
-
 Remove-FabricDomain -DomainId $domain.id
-#subdomain
-$domain = Get-FabricDomain -DomainName "parent1"
-Add-FabricDomain -DomainName "API SubDomain" -DomainDescription "API sub domain" -ParentDomainId $domain.id
 
+## Get Domain Workspace
+$domain = Get-FabricDomain -DomainName "API3"
+Get-FabricDomainWorkspace -DomainId $domain.id
 
 # Assign domain workspace by Capacity
 $capacity = Get-FabricCapacity 
-Add-FabricDomainWorkspaceByCapacity -DomainId $domain.id -capacitiesIds $capacity.id
+Assign-FabricDomainWorkspaceByCapacity -DomainId $domain.id -capacitiesIds $capacity.id
 
 # Assign domain workspace by Id
 $workspace = Get-FabricWorkspace
-$workspace | Format-Table
-Add-FabricDomainWorkspaceById -DomainId $domain.id -WorkspaceId $workspace.id
-$body ='{
-    "role": "Admin",
-    "principal": {
-      "type": "User",
-      "id": "b5b9495c-685a-447a-b4d3-2d8e963e6288"
-    }
-  }'
+$workspace[0] =$null # Removing My Workspace
+Assign-FabricDomainWorkspaceById -DomainId $domain.id -WorkspaceId $workspace.id
 
-  $body = @{
-    principal =  @{
-        id = "b5b9495c-685a-447a-b4d3-2d8e963e6288"
-        type = "User"
-    }
-    role = "Admin"
-}
+## Remove Domain Workspace
+$workspace = Get-FabricWorkspace
+$workspace[0] =$null # Removing My Workspace
+$domain = Get-FabricDomain -DomainName "API1"
+Unassign-FabricDomainWorkspace -DomainId $domain.id -WorkspaceIds $workspace.id
 
-
-  $bodyJson = $body | ConvertTo-Json -Depth 2
-$a =Invoke-RestMethod -Headers $FabricConfig.FabricHeaders -Uri "https://api.fabric.microsoft.com/v1/workspaces/26cbd4ed-5920-4f2b-94ab-8e6ffbbdc48d/roleAssignments" -Method Post -Body $bodyJson -ContentType "application/json" -ErrorAction Stop -SkipHttpErrorCheck -StatusCodeVariable "statusCode"
-$statusCode
-$a
-
-$A = Invoke-WebRequest -Headers $FabricConfig.FabricHeaders -Uri "https://api.fabric.microsoft.com/v1/workspaces/915d192f-4118-4d83-bc06-781527eb42f2/roleAssignments" -Method Get -ErrorAction Stop
-
-#GET
-Invoke-WebRequest -Headers $FabricConfig.FabricHeaders -Uri https://api.fabric.microsoft.com/v1/admin/domains/fda27838-f479-403a-9430-75f51e0aad77/workspaces -Method Get -ErrorAction Stop
-https://api.fabric.microsoft.com/v1/admin/domains
-
-$WorkspaceIds = @( 
-      "844265c8-6d6e-4d34-b9bd-678a07ffa083",
-      "10fd04f9-0dc0-496b-a5a7-67e711e38817"
-)
-
-$workspace = Get-FabricWorkspace -WorkspaceName "Tiago API 152"
-  $body = @{
-    principals = @( @{
-        id = "813abb4a-414c-4ac0-9c2c-bd17036fd58c"
-        type = "User"
-    })
-}
-
-$bodyJson = $body | ConvertTo-Json -Depth 2
-$bodyJson
-Invoke-WebRequest -Headers $FabricConfig.FabricHeaders -Uri "https://api.fabric.microsoft.com/v1/admin/domains/2bf5d714-4dd4-44fb-b76e-10a0ff3dbcbe/assignWorkspacesByPrincipals" -Method Post -Body $bodyJson -ContentType "application/json" -ErrorAction Stop
-
-
-    $PrincipalIds = @( @{id = "813abb4a-414c-4ac0-9c2c-bd17036fd58c";  type = "User"},
-                    @{id = "b5b9495c-685a-447a-b4d3-2d8e963e6288"; type = "User"})
-
-
-$domain
-$PrincipalIds
-
-Add-FabricDomainWorkspaceByPrincipal -DomainId $domain.id -PrincipalIds $PrincipalIds
-
-Remove-FabricDomainWorkspace -DomainId $domain.id -WorkspaceId $workspace.id
-
-
-AssignFabricDomainWorkspaceRoleAssignment -DomainId $domain.id -DomainRole Contributors -PrincipalIds $PrincipalIds
-Unassign-FabricDomainWorkspaceRoleAssignment -DomainId $domain.id -DomainRole Contributors -PrincipalIds $PrincipalIds
-# Construct the JSON body
+## Assign domain workspace by Principal
 $PrincipalIds = @( @{id = "813abb4a-414c-4ac0-9c2c-bd17036fd58c";  type = "User"},
-@{id = "b5b9495c-685a-447a-b4d3-2d8e963e6288"; type = "User"})
+                   @{id = "b5b9495c-685a-447a-b4d3-2d8e963e6288"; type = "User"})
+
+$domain = Get-FabricDomain -DomainName "API1"
+Assign-FabricDomainWorkspaceByPrincipal -DomainId $domain.id -PrincipalIds $PrincipalIds
+
+## Assign domain workspace by Capacity
+$domain = Get-FabricDomain -DomainName "API1"
+$PrincipalIds = @( @{id = "813abb4a-414c-4ac0-9c2c-bd17036fd58c";  type = "User"},
+                   @{id = "b5b9495c-685a-447a-b4d3-2d8e963e6288"; type = "User"})
+Assign-FabricDomainWorkspaceRoleAssignment -DomainId $domain.id -DomainRole Contributors -PrincipalIds $PrincipalIds -Debug
+
+## Unassign domain workspace by Principal
+$domain = Get-FabricDomain -DomainName "API1"
+$PrincipalIds = @( @{id = "813abb4a-414c-4ac0-9c2c-bd17036fd58c";  type = "User"},
+                   @{id = "b5b9495c-685a-447a-b4d3-2d8e963e6288"; type = "User"})
+Unassign-FabricDomainWorkspaceRoleAssignment -DomainId $domain.id -DomainRole Admins -PrincipalIds $PrincipalIds -Debug
 
 
-$body = @{
-    type = "Contributors"
-    principals = $PrincipalIds
-}
-$bodyJson = $body | ConvertTo-Json -Depth 2
-$bodyJson 
-
-# Make the API request
-#Write-Message -Message "Sending API request for bulk role unassignment..." -Level Info
-$DomainId = "822d6d50-da15-4e91-a310-a75caf4827dc"
-Get-FabricDomain -DomainId $DomainId
-
-Get-FabricEnvironment -WorkspaceId $workspace.id
-
-try {
-    Invoke-WebRequest -Headers $FabricConfig.FabricHeaders -Uri "https://api.fabric.microsoft.com/v1/workspaces/fa69c132-6e79-4d5f-9074-37894d084f5e/environments" -Method Get -ErrorAction Stop
-} catch {
-    $webException = $_.Exception.InnerException
-    if ($webException) {
-        Write-Output "WebException Message: $($webException.Message)"
-        Write-Output "HTTP Status Code: $($webException.Response.StatusCode)"
-        Write-Output "HTTP Status Description: $($webException.Response.StatusDescription)"
-    } else {
-        Write-Output "General Error: $($_.Exception.Message)"
-    }
-}
-
-
-try {
-    #Invoke-WebRequest -Headers $FabricConfig.FabricHeaders -Uri "https://api.fabric.microsoft.com/v1/workspaces/faa69c132-6e79-4d5f-9074-37894d084f5e/environments" -Method Get -ErrorAction Stop
-    $a = Invoke-RestMethod -Headers $FabricConfig.FabricHeaders -SkipHttpErrorCheck -StatusCodeVariable "statusCode"  -Uri "https://api.fabric.microsoft.com/v1/workspacesa" -Method Get -ErrorAction Stop
-    #$a.message
-    #$statusCode
-    #$a
- }
-    catch {            
-        #Write-host  $a.message
-        
-        Write-host 'error'
-    }
-
-$a = Invoke-RestMethod -Headers $FabricConfig.FabricHeaders -SkipHttpErrorCheck -StatusCodeVariable "statusCode"  -Uri "https://api.fabric.microsoft.com/v1/workspaces/fa69c132-6e79-4d5f-9074-37894d084f5e/environments" -Method Get -ErrorAction Stop
-$statusCode
-Get-FabricWorkspace
-$a.value 
-
-
-
-try {
-    # Make a REST API call with -SkipHttpErrorCheck to prevent automatic error handling
-    $response = Invoke-RestMethod -Headers $FabricConfig.FabricHeaders -SkipHttpErrorCheck -StatusCodeVariable "statusCode"  -Uri "https://api.fabric.microsoft.com/v1/workspaces/fa69c132-6e79-4d5f-9074-37894d084f5e/environments" -Method Get -ErrorAction Stop
-    $statusCode
-    #$response
-    # Check the HTTP status code to see if there's an error
-    if ($statusCode -ge 400) {
-        throw
-    } else {
-        # Handle success case
-        Write-Host "Success: $($response.Content)"
-    }
-} catch {
-    # Catch any unexpected errors (e.g., connection failures)
-    Write-Host "An unexpected error occurred: $_"
-    Write-Host "HTTP Error: $($response.message)"
-    Write-Host "Error Code: $($response.errorCode)"
-}
 

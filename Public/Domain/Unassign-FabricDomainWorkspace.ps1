@@ -14,24 +14,19 @@ The unique identifier of the Fabric domain.
 (Optional) An array of workspace IDs to unassign. If not provided, all workspaces will be unassigned.
 
 .EXAMPLE
-Unassign -FabricDomainWorkspace -DomainId "12345"
+Unassign-FabricDomainWorkspace -DomainId "12345"
 
 Unassigns all workspaces from the domain with ID "12345".
 
 .EXAMPLE
-Unassign -FabricDomainWorkspace -DomainId "12345" -WorkspaceIds @("workspace1", "workspace2")
+Unassign-FabricDomainWorkspace -DomainId "12345" -WorkspaceIds @("workspace1", "workspace2")
 
 Unassigns the specified workspaces from the domain with ID "12345".
 
 .NOTES
 - Requires `$FabricConfig` global configuration, including `BaseUrl` and `FabricHeaders`.
-- Calls `Is-TokenExpired` to ensure token validity before making the API request.
+- Calls `Test-TokenExpired` to ensure token validity before making the API request.
 
-.MODIFICATIONS
-- Added enhanced logging and error handling.
-- Made the function modular for better reusability.
-- Improved parameter validation.
-- Detailed comment-based help.
 
 Author: Tiago Balabuch  
 Date: 2024-12-15
@@ -49,51 +44,44 @@ function Unassign-FabricDomainWorkspace {
     )
 
     try {
-        # Ensure token validity
-        Is-TokenExpired
+        # Step 1: Ensure token validity
+        Write-Message -Message "Validating token..." -Level Debug
+        Test-TokenExpired
+        Write-Message -Message "Token validation completed." -Level Debug
 
-        # Construct the API URL
-        $apiEndpointUrl = "{0}/admin/domains/{1}/unassignAllWorkspaces" -f $FabricConfig.BaseUrl, $DomainId
-        Write-Message -Message "API Endpoint: $apiEndpointUrl" -Level Info
+        # Step 2: Construct the API URL
+        # Determine the API endpoint URL based on the presence of WorkspaceIds
+        $endpointSuffix = if ($WorkspaceIds) { "unassignWorkspaces" }  else { "unassignAllWorkspaces" }
 
-        $bodyJson = $null
-        if(($WorkspaceIds -and $WorkspaceIds.Count -gt 0)) {
-            # Construct the request body
-            $body = @{
-                workspacesIds = $WorkspaceIds
-            }
+        $apiEndpointUrl = "{0}/admin/domains/{1}/{2}" -f $FabricConfig.BaseUrl, $DomainId, $endpointSuffix
+        Write-Message -Message "API Endpoint: $apiEndpointUrl" -Level Debug
+        
 
-            # Convert the body to JSON
-            $bodyJson = $body | ConvertTo-Json -Depth 2
-            #Write-Message -Message "Request Body: $bodyJson" -Level Info
-
-            # Make the API request
-            $response = Invoke-WebRequest -Headers $FabricConfig.FabricHeaders -Uri $apiEndpointUrl -Method Post -Body $bodyJson -ContentType "application/json" -ErrorAction Stop
+        # Step 3: Construct the request body (if needed)
+        $bodyJson = if ($WorkspaceIds) {
+            $body = @{ workspacesIds = $WorkspaceIds }
+            $body | ConvertTo-Json -Depth 2
         }
         else {
-        # Make the API request
-        $response = Invoke-WebRequest -Headers $FabricConfig.FabricHeaders -Uri $apiEndpointUrl -Method Post
+            $null
         }
+    
+        Write-Message -Message "Request Body: $bodyJson" -Level Debug
+        # Step 4: Make the API request to unassign specific workspaces
+        $response = Invoke-RestMethod -Headers $FabricConfig.FabricHeaders -Uri $apiEndpointUrl -Method Post -Body $bodyJson -ContentType "application/json" -ErrorAction Stop -SkipHttpErrorCheck -StatusCodeVariable "statusCode"
 
-        # Handle response
-        #$responseCode = $response.StatusCode
-        #SWrite-Message -Message "Response Code: $responseCode" -Level Info
-
-        # Handle the response
-        if ($response.StatusCode -eq 200) {
-            if ($WorkspaceIds) {
-             Write-Message -Message "Successfully unassigned specified workspaces from domain '$DomainId'." -Level Info
-            } else {
-                Write-Message -Message "Successfully unassigned all workspaces from domain '$DomainId'." -Level Info
-            }
-        } else {
-            Write-Message -Message "Unexpected response code: $($response.StatusCode) while processing domain '$DomainId'." -Level Error
+        # Step 5: Validate the response code
+        if ($statusCode -ne 200) {
+            Write-Message -Message "Unexpected response code: $statusCode from the API." -Level Error
+            Write-Message -Message "Error: $($response.message)" -Level Error
+            Write-Message "Error Code: $($response.errorCode)" -Level Error
+            return $null
         }
+        Write-Message -Message "Successfully unassigned workspaces to the domain with ID '$DomainId'." -Level Info
     }
     catch {
-        # Capture detailed error information
+        # Step 6: Capture and log error details
         $errorDetails = $_.Exception.Message
-        Write-Message -Message "Failed to unassign workspaces from domain '$DomainId'. Error: $errorDetails" -Level Error
-        #throw "Error deleting domain: $errorDetails"
+        Write-Message -Message "Failed to unassign workspaces to the domain with ID '$DomainId'. Error: $errorDetails" -Level Error
     }
 }

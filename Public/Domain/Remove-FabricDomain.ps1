@@ -15,7 +15,7 @@ Deletes the domain with ID "12345".
 
 .NOTES
 - Requires `$FabricConfig` global configuration, including `BaseUrl` and `FabricHeaders`.
-- Calls `Is-TokenExpired` to ensure token validity before making the API request.
+- Calls `Test-TokenExpired` to ensure token validity before making the API request.
 
 Author: Tiago Balabuch  
 Date: 2024-12-14
@@ -30,31 +30,32 @@ function Remove-FabricDomain {
     )
 
     try {
-        # Ensure token validity
-        Is-TokenExpired
+        # Step 1: Ensure token validity
+        #Write-Message -Message "Validating token..." -Level Info
+        Test-TokenExpired
+        #Write-Message -Message "Token validation completed." -Level Info
 
-        # Construct the API URL
+        # Step 2: Construct the API URL
         $apiEndpointUrl = "{0}/admin/domains/{1}" -f $FabricConfig.BaseUrl, $DomainId
-        Write-Message -Message "API Endpoint: $apiEndpointUrl" -Level Info
+        Write-Message -Message "API Endpoint: $apiEndpointUrl" -Level Message
 
-        # Make the API request
-        $response = Invoke-WebRequest -Headers $FabricConfig.FabricHeaders -Uri $apiEndpointUrl -Method Delete -ErrorAction Stop
+        # Step 3: Make the API request
+        $response = Invoke-RestMethod -Headers $FabricConfig.FabricHeaders -Uri $apiEndpointUrl -Method Delete -ErrorAction Stop -SkipHttpErrorCheck -StatusCodeVariable "statusCode"
 
-        # Handle response
-        $responseCode = $response.StatusCode
-        #SWrite-Message -Message "Response Code: $responseCode" -Level Info
-
-        if ($responseCode -eq 200) {
-            Write-Message -Message "Domain '$DomainId' deleted successfully!" -Level Info
+        # Step 4: Validate the response code
+        if ($statusCode -ne 200) {
+            Write-Message -Message "Unexpected response code: $statusCode from the API." -Level Error
+            Write-Message -Message "Error: $($response.message)" -Level Error
+            Write-Message "Error Code: $($response.errorCode)" -Level Error
+            return $null
         }
-        else {
-            Write-Message -Message "Unexpected response code: $responseCode while attempting to delete domain '$DomainId'." -Level Error
-        }
+
+        Write-Message -Message "Domain '$DomainId' deleted successfully!" -Level Info
+       
     }
     catch {
-        # Capture detailed error information
+        # Step 5: Log and handle errors
         $errorDetails = $_.Exception.Message
         Write-Message -Message "Failed to delete domain '$DomainId'. Error: $errorDetails" -Level Error
-        #throw "Error deleting domain: $errorDetails"
     }
 }

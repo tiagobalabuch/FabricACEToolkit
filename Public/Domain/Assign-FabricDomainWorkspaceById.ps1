@@ -18,7 +18,7 @@ Assigns the workspaces with IDs "ws1", "ws2", and "ws3" to the domain with ID "1
 
 .NOTES
 - Requires `$FabricConfig` global configuration, including `BaseUrl` and `FabricHeaders`.
-- The function ensures token validity before making API requests.
+- Calls `Test-TokenExpired` to ensure token validity before making the API request.
 
 Author: Tiago Balabuch  
 Date: 2024-12-15
@@ -37,37 +37,38 @@ function Assign-FabricDomainWorkspaceById {
     )
 
     try {
-        # Ensure the API token is valid
-        Is-TokenExpired
+        # Step 1: Ensure token validity
+        #Write-Message -Message "Validating token..." -Level Info
+        Test-TokenExpired
+        #Write-Message -Message "Token validation completed." -Level Info
 
-        # Construct the API URL
+        # Step 2: Construct the API URL
         $apiEndpointUrl = "{0}/admin/domains/{1}/assignWorkspaces" -f $FabricConfig.BaseUrl, $DomainId
-        Write-Message -Message "API Endpoint: $apiEndpointUrl" -Level Info
+        Write-Message -Message "API Endpoint: $apiEndpointUrl" -Level Message
         
-        # Construct the request body
+        # Step 3: Construct the request body
         $body = @{
             workspacesIds = $WorkspaceIds
         }
       
         # Convert the body to JSON
         $bodyJson = $body | ConvertTo-Json -Depth 2
-        #Write-Message -Message "Request Body: $bodyJson" -Level Info
+        #Write-Message -Message "Request Body: $bodyJson" -Level Message
 
-        # Make the API request
-        $response = Invoke-WebRequest -Headers $FabricConfig.FabricHeaders -Uri $apiEndpointUrl -Method Post -Body $bodyJson -ContentType "application/json" -ErrorAction Stop
+        # Step 4: Make the API request
+        $response = Invoke-RestMethod -Headers $FabricConfig.FabricHeaders -Uri $apiEndpointUrl -Method Post -Body $bodyJson -ContentType "application/json" -ErrorAction Stop -SkipHttpErrorCheck -StatusCodeVariable "statusCode"
 
-        # Handle response
-        $responseCode = $response.StatusCode
-        #Write-Message -Message "Response Code: $responseCode" -Level Info
-
-        if ($responseCode -eq 200) {
-            Write-Message -Message "Successfully assigned workspaces to the domain with ID '$DomainId'." -Level Info
-        } else {
-            Write-Message -Message "Unexpected response code: $responseCode while assigning workspaces to the domain." -Level Error
+        # Step 5: Validate the response code
+        if ($statusCode -ne 200) {
+            Write-Message -Message "Unexpected response code: $statusCode from the API." -Level Error
+            Write-Message -Message "Error: $($response.message)" -Level Error
+            Write-Message "Error Code: $($response.errorCode)" -Level Error
+            return $null
         }
+        Write-Message -Message "Successfully assigned workspaces to the domain with ID '$DomainId'." -Level Info
     }
     catch {
-        # Log error details
+        # Step 6: Capture and log error details
         $errorDetails = $_.Exception.Message
         Write-Message -Message "Failed to assign workspaces to the domain with ID '$DomainId'. Error: $errorDetails" -Level Error
     }

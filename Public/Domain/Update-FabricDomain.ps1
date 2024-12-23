@@ -24,7 +24,7 @@ Updates the domain with ID "12345" with a new name, description, and contributor
 
 .NOTES
 - Requires `$FabricConfig` global configuration, including `BaseUrl` and `FabricHeaders`.
-- Calls `Is-TokenExpired` to ensure the token is valid before making the API request.
+- Calls `Test-TokenExpired` to ensure token validity before making the API request.
 
 Author: Tiago Balabuch  
 Date: 2024-12-14
@@ -53,14 +53,16 @@ function Update-FabricDomain {
     )
 
     try {
-        # Ensure token validity
-        Is-TokenExpired
+        # Step 1: Ensure token validity
+        #Write-Message -Message "Validating token..." -Level Info
+        Test-TokenExpired
+        #Write-Message -Message "Token validation completed." -Level Info
 
-        # Construct the API URL
+        # Step 2: Construct the API URL
         $apiEndpointUrl = "{0}/admin/domains/{1}" -f $FabricConfig.BaseUrl, $DomainId
-        Write-Message -Message "API Endpoint: $apiEndpointUrl" -Level Info
+        Write-Message -Message "API Endpoint: $apiEndpointUrl" -Level Message
 
-        # Define the request body
+        # Step 3: Construct the request body
         $body = @{
             displayName = $DomainName
         }
@@ -75,35 +77,27 @@ function Update-FabricDomain {
 
         # Convert the body to JSON
         $bodyJson = $body | ConvertTo-Json -Depth 10
-        Write-Message -Message "Request Body: $bodyJson" -Level Info
+        #Write-Message -Message "Request Body: $bodyJson" -Level Info
 
-        # Make the API request
-        $response = Invoke-WebRequest -Headers $FabricConfig.FabricHeaders -Uri $apiEndpointUrl -Method Patch -Body $bodyJson -ContentType "application/json" -ErrorAction Stop
+        # Step 4: Make the API request
+        $response = Invoke-RestMethod -Headers $FabricConfig.FabricHeaders -Uri $apiEndpointUrl -Method Patch -Body $bodyJson -ContentType "application/json" -ErrorAction Stop -SkipHttpErrorCheck -StatusCodeVariable "statusCode"
 
-        # Parse and log the response
-        $responseCode = $response.StatusCode
-        Write-Message -Message "Response Code: $responseCode" -Level Info
-
-        if ($responseCode -eq 200) {
-            Write-Message -Message "Domain '$DomainName' updated successfully!" -Level Info
-
-            if ($response.Content) {
-                $data = $response.Content | ConvertFrom-Json
-                Write-Message -Message "Response Content: $($data | ConvertTo-Json -Depth 10)" -Level Debug
-                return $data
-            } else {
-                Write-Message -Message "No content returned in the response. Update assumed successful." -Level Info
-                return $null
-            }
-        } else {
-            Write-Message -Message "Unexpected response code: $responseCode during update." -Level Error
+        # Step 5: Validate the response code
+        if ($statusCode -ne 200) {
+            Write-Message -Message "Unexpected response code: $statusCode from the API." -Level Error
+            Write-Message -Message "Error: $($response.message)" -Level Error
+            Write-Message "Error Code: $($response.errorCode)" -Level Error
             return $null
         }
+        
+        # Step 6: Handle results
+        Write-Message -Message "Domain '$DomainName' updated successfully!" -Level Info
+        return $response
     }
     catch {
-        # Log and handle errors
+        # Step 7: Log and handle errors
         $errorDetails = $_.Exception.Message
         Write-Message -Message "Failed to update domain '$DomainId'. Error: $errorDetails" -Level Error
-        throw "Error updating domain: $errorDetails"
     }
 }
+ 

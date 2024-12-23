@@ -14,8 +14,8 @@ Get-FabricDomainWorkspace -DomainId "12345"
 Fetches workspaces for the domain with ID "12345".
 
 .NOTES
-- Requires the `$FabricConfig` global object, including `BaseUrl` and `FabricHeaders`.
-- Calls `Is-TokenExpired` to ensure the token is valid before making the API request.
+- Requires `$FabricConfig` global configuration, including `BaseUrl` and `FabricHeaders`.
+- Calls `Test-TokenExpired` to ensure token validity before making the API request.
 
 Author: Tiago Balabuch  
 Date: 2024-12-14
@@ -30,46 +30,44 @@ function Get-FabricDomainWorkspace {
     )
 
     try {
-        # Handle ambiguous input
-        if ($DomainId -and $DomainName) {
-            Write-Message -Message "Both 'DomainId' and 'DomainName' were provided. Please specify only one." -Level Error
-            return @()
-        }
+        # Step 1: Ensure token validity
+        #Write-Message -Message "Validating token..." -Level Info
+        Test-TokenExpired
+        #Write-Message -Message "Token validation completed." -Level Info
 
-        # Check if the token is expired
-        Is-TokenExpired
-
-        # Construct the API URL
+        # Step 2: Construct the API URL
         $apiEndpointUrl = "{0}/admin/domains/{1}/workspaces" -f $FabricConfig.BaseUrl, $DomainId
-        
-        Write-Message -Message "API Endpoint: $apiEndpointUrl" -Level Info
+        Write-Message -Message "API Endpoint: $apiEndpointUrl" -Level Message
 
-        # Make the API request
-        $response = Invoke-WebRequest -Headers $FabricConfig.FabricHeaders -Uri $apiEndpointUrl -Method Get -ErrorAction Stop
+        # Step 3: Make the API request
+        $response = Invoke-RestMethod -Headers $FabricConfig.FabricHeaders -Uri $apiEndpointUrl -Method Get -ErrorAction Stop -SkipHttpErrorCheck -StatusCodeVariable "statusCode"
 
-        # Validate the response
-        if (-not $response.Content) {
-            Write-Message -Message "Empty response from the API." -Level Warning
-            return @()
+        # Step 4: Validate the response code
+        if ($statusCode -ne 200) {
+            Write-Message -Message "Unexpected response code: $statusCode from the API." -Level Error
+            Write-Message -Message "Error: $($response.message)" -Level Error
+            Write-Message "Error Code: $($response.errorCode)" -Level Error
+            return $null
+        }
+                    
+        # Step 5: Handle empty response
+        if (-not $response) {
+            Write-Message -Message "No data returned from the API." -Level Warning
+            return $null
+        }
+        # Step 6: Handle results
+        if ($response) {
+            return $response.value
+        }
+        else {
+            Write-Message -Message "No workspace found for the '$DomainId'." -Level Warning
+            return $null
         }
 
-        $responseCode = $response.StatusCode
-        #Debug
-        #Write-Message -Message "Response Code: $responseCode" -Level Info
-
-        if ($responseCode -eq 200) {
-            # Parse and return the response data
-            $data = $response.Content | ConvertFrom-Json
-            return $data.value
-        } else {
-            Write-Message -Message "Unexpected response code: $responseCode from the API." -Level Error
-            return @()
-        }
     }
     catch {
-        # Handle and log errors
+        # Step 7: Capture and log error details
         $errorDetails = Get-ErrorResponse($_.Exception)
         Write-Message -Message "Failed to retrieve domain workspaces. Error: $errorDetails" -Level Error
-        #throw "Error retrieving workspace details: $errorDetails"
     }
 }
