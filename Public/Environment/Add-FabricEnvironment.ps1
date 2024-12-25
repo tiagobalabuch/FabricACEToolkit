@@ -57,7 +57,6 @@ function Add-FabricEnvironment {
         # Step 3: Construct the request body
         $body = @{
             displayName = $EnvironmentName
-            description = $EnvironmentDescription
         }
 
         if ($EnvironmentDescription) {
