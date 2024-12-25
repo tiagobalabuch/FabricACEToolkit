@@ -1,3 +1,35 @@
+<#
+.SYNOPSIS
+    Decodes a Base64-encoded string into its original text representation.
+
+.DESCRIPTION
+    The Decode-FromBase64 function takes a Base64-encoded string as input, decodes it into a byte array, 
+    and converts it back into a UTF-8 encoded string. It is useful for reversing Base64 encoding applied 
+    to text or other data.
+
+.PARAMETER Base64String
+    The Base64-encoded string that you want to decode.
+
+.EXAMPLE
+    PS C:\> Decode-FromBase64 -Base64String "SGVsbG8sIFdvcmxkIQ=="
+
+    Output:
+    Hello, World!
+
+.EXAMPLE
+    PS C:\> $encodedString = "U29tZSBlbmNvZGVkIHRleHQ="
+    PS C:\> Decode-FromBase64 -Base64String $encodedString
+
+    Output:
+    Some encoded text
+
+.NOTES
+    - This function assumes the Base64 input is a valid UTF-8 encoded string.
+    - Any decoding errors will throw a descriptive error message.
+
+.AUTHOR
+Tiago Balabuch
+#>
 function Decode-FromBase64 {
     param (
         [Parameter(Mandatory = $true)]

@@ -55,19 +55,26 @@ function Get-FabricDomain {
         }
 
         # Step 2: Ensure token validity
-        #Write-Message -Message "Validating token..." -Level Info
+        Write-Message -Message "Validating token..." -Level Debug
         Test-TokenExpired
-        #Write-Message -Message "Token validation completed." -Level Info
+        Write-Message -Message "Token validation completed." -Level Debug
 
         # Step 3: Construct the API URL with filtering logic        
         $apiEndpointUrl = "{0}/admin/domains" -f $FabricConfig.BaseUrl
         if ($NonEmptyDomainsOnly) {
             $apiEndpointUrl = "{0}?nonEmptyOnly=true" -f $apiEndpointUrl
         }
-        Write-Message -Message "API Endpoint: $apiEndpointUrl" -Level Message
+        Write-Message -Message "API Endpoint: $apiEndpointUrl" -Level Debug
 
         # Step 4: Make the API request
-        $response = Invoke-RestMethod -Headers $FabricConfig.FabricHeaders -Uri $apiEndpointUrl -Method Get -ErrorAction Stop -SkipHttpErrorCheck -StatusCodeVariable "statusCode"
+        $response = Invoke-RestMethod `
+            -Headers $FabricConfig.FabricHeaders `
+            -Uri $apiEndpointUrl `
+            -Method Get `
+            -ErrorAction Stop `
+            -SkipHttpErrorCheck `
+            -ResponseHeadersVariable "responseHeader" `
+            -StatusCodeVariable "statusCode"
 
         # Step 5: Validate the response code
         if ($statusCode -ne 200) {
@@ -93,7 +100,7 @@ function Get-FabricDomain {
         }
         else {
             # Return all domains if no filter is provided
-            Write-Message -Message "No filter provided. Returning all domains." -Level Message
+            Write-Message -Message "No filter provided. Returning all domains." -Level Debug
             return $response.domains
         }
 

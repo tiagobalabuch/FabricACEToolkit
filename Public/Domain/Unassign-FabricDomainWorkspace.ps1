@@ -68,7 +68,16 @@ function Unassign-FabricDomainWorkspace {
     
         Write-Message -Message "Request Body: $bodyJson" -Level Debug
         # Step 4: Make the API request to unassign specific workspaces
-        $response = Invoke-RestMethod -Headers $FabricConfig.FabricHeaders -Uri $apiEndpointUrl -Method Post -Body $bodyJson -ContentType "application/json" -ErrorAction Stop -SkipHttpErrorCheck -StatusCodeVariable "statusCode"
+        $response = Invoke-RestMethod `
+            -Headers $FabricConfig.FabricHeaders `
+            -Uri $apiEndpointUrl `
+            -Method Post `
+            -Body $bodyJson `
+            -ContentType "application/json" `
+            -ErrorAction Stop `
+            -SkipHttpErrorCheck `
+            -ResponseHeadersVariable "responseHeader" `
+            -StatusCodeVariable "statusCode"
 
         # Step 5: Validate the response code
         if ($statusCode -ne 200) {

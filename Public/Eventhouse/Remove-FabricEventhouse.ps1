@@ -38,26 +38,33 @@ function Remove-FabricEventhouse {
 
     try {
         # Step 1: Ensure token validity
-        #Write-Message -Message "Validating token..." -Level Info
-        Is-TokenExpired
-        #Write-Message -Message "Token validation completed." -Level Info
+        Write-Message -Message "Validating token..." -Level Debug
+        Test-TokenExpired
+        Write-Message -Message "Token validation completed." -Level Debug
 
         # Step 2: Construct the API URL
         $apiEndpointUrl = "{0}/workspaces/{1}/eventhouses/{2}" -f $FabricConfig.BaseUrl, $WorkspaceId, $EventhouseId
-        Write-Message -Message "API Endpoint: $apiEndpointUrl" -Level Info
+        Write-Message -Message "API Endpoint: $apiEndpointUrl" -Level Debug
 
-        # Step 3: Send DELETE request to API
-        #Write-Message -Message "Sending API request to delete Eventhouse '$EventhouseId'..." -Level Info
-        $response = Invoke-RestMethod -Headers $FabricConfig.FabricHeaders -Uri $apiEndpointUrl -Method Delete -ErrorAction Stop -SkipHttpErrorCheck -StatusCodeVariable "statusCode"
+        # Step 3: Make the API request
+        $response = Invoke-RestMethod `
+            -Headers $FabricConfig.FabricHeaders `
+            -Uri $apiEndpointUrl `
+            -Method Delete `
+            -ErrorAction Stop `
+            -SkipHttpErrorCheck `
+            -ResponseHeadersVariable "responseHeader" `
+            -StatusCodeVariable "statusCode"
+        
+            # Step 4: Handle response
+        if ($statusCode -ne 200) {
+            Write-Message -Message "Unexpected response code: $statusCode from the API." -Level Error
+            Write-Message -Message "Error: $($response.message)" -Level Error
+            Write-Message "Error Code: $($response.errorCode)" -Level Error
+            return $null
+        }
 
-        # Step 4: Handle response
-        $responseCode = $response.StatusCode
-        if ($responseCode -eq 200) {
-            Write-Message -Message "Eventhouse '$EventhouseId' deleted successfully from workspace '$WorkspaceId'." -Level Info
-        }
-        else {
-            Write-Message -Message "Unexpected response code: $responseCode while attempting to delete Eventhouse '$EventhouseId'." -Level Error
-        }
+        Write-Message -Message "Eventhouse '$EventhouseId' deleted successfully from workspace '$WorkspaceId'." -Level Info  
     }
     catch {
         # Step 5: Log and handle errors

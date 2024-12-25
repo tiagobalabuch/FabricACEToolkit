@@ -74,7 +74,16 @@ function Unassign-FabricDomainWorkspaceRoleAssignment {
         Write-Message -Message "Request Body: $bodyJson" -Level Debug
 
         # Step 5: Make the API request
-        $response = Invoke-RestMethod -Headers $FabricConfig.FabricHeaders -Uri $apiEndpointUrl -Method Post -Body $bodyJson -ContentType "application/json" -ErrorAction Stop -SkipHttpErrorCheck -StatusCodeVariable "statusCode"
+        $response = Invoke-RestMethod `
+            -Headers $FabricConfig.FabricHeaders `
+            -Uri $apiEndpointUrl `
+            -Method Post `
+            -Body $bodyJson `
+            -ContentType "application/json" `
+            -ErrorAction Stop `
+            -SkipHttpErrorCheck `
+            -ResponseHeadersVariable "responseHeader" `
+            -StatusCodeVariable "statusCode"
 
         # Step 6: Validate the response code
         if ($statusCode -ne 200) {

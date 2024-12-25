@@ -58,7 +58,7 @@ function Get-FabricCapacity {
 
         # Step 3: Construct the API URL
         $apiEndpointUrl = "{0}/capacities" -f $FabricConfig.BaseUrl
-        Write-Message -Message "API Endpoint: $apiEndpointUrl" -Level Message
+        Write-Message -Message "API Endpoint: $apiEndpointUrl" -Level Debug
 
         # Step 4: Make the API request
         $response = Invoke-RestMethod -Headers $FabricConfig.FabricHeaders -Uri $apiEndpointUrl -Method Get -ErrorAction Stop -SkipHttpErrorCheck -StatusCodeVariable "statusCode"
@@ -86,13 +86,13 @@ function Get-FabricCapacity {
         }
         else {
             # No filter, return all capacities
-            Write-Message -Message "No filter specified. Returning all capacities." -Level Message
+            Write-Message -Message "No filter specified. Returning all capacities." -Level Debug
             return $response.value
         }
 
         # Step 8: Handle results
         if ($capacity) {
-            Write-Message -Message "Capacity found matching the specified criteria." -Level Message
+            Write-Message -Message "Capacity found matching the specified criteria." -Level Debug
             return $capacity
         }
         else {

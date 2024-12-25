@@ -122,7 +122,7 @@ function Update-FabricNotebookDefinition {
                 Write-Message -Message "Error details: $($response.message)" -Level Error
                 throw "API request failed with status code $statusCode."
             }
-        }#>
+        }
     }
     catch {
         # Step 6: Handle and log errors
