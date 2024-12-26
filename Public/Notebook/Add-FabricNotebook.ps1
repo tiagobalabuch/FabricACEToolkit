@@ -1,26 +1,26 @@
 <#
 .SYNOPSIS
-    Creates a new notebook in a specified Microsoft Fabric workspace.
+Creates a new notebook in a specified Microsoft Fabric workspace.
 
 .DESCRIPTION
-    This function sends a POST request to the Microsoft Fabric API to create a new notebook 
-    in the specified workspace. It supports optional parameters for notebook description 
-    and path definitions for the notebook content.
+This function sends a POST request to the Microsoft Fabric API to create a new notebook 
+in the specified workspace. It supports optional parameters for notebook description 
+and path definitions for the notebook content.
 
 .PARAMETER WorkspaceId
-    The unique identifier of the workspace where the notebook will be created.
+The unique identifier of the workspace where the notebook will be created.
 
 .PARAMETER NotebookName
-    The name of the notebook to be created.
+The name of the notebook to be created.
 
 .PARAMETER NotebookDescription
-    An optional description for the notebook.
+An optional description for the notebook.
 
 .PARAMETER NotebookPathDefinition
-    An optional path to the notebook definition file (e.g., .ipynb file) to upload.
+An optional path to the notebook definition file (e.g., .ipynb file) to upload.
 
 .PARAMETER NotebookPathPlatformDefinition
-    An optional path to the platform-specific definition (e.g., .platform file) to upload.
+An optional path to the platform-specific definition (e.g., .platform file) to upload.
 
 .EXAMPLE
  Add-FabricNotebook -WorkspaceId "workspace-12345" -NotebookName "New Notebook" -NotebookPathDefinition "C:\notebooks\example.ipynb"
@@ -77,53 +77,54 @@ function Add-FabricNotebook {
             $body.description = $NotebookDescription
         }
 
-
         if ($NotebookPathDefinition) {
             $notebookEncodedContent = Encode-ToBase64 -filePath $NotebookPathDefinition
 
             if (-not [string]::IsNullOrEmpty($notebookEncodedContent)) {
-            # Initialize definition if it doesn't exist
-            if (-not $body.definition) {
-                $body.definition = @{
-                    format = "ipynb"
-                    parts  = @()
+                # Initialize definition if it doesn't exist
+                if (-not $body.definition) {
+                    $body.definition = @{
+                        format = "ipynb"
+                        parts  = @()
+                    }
+                }
+
+                # Add new part to the parts array
+                $body.definition.parts += @{
+                    path        = "notebook-content.py"
+                    payload     = $notebookEncodedContent
+                    payloadType = "InlineBase64"
                 }
             }
-
-            # Add new part to the parts array
-            $body.definition.parts += @{
-                path        = "notebook-content.py"
-                payload     = $notebookEncodedContent
-                payloadType = "InlineBase64"
+            else {
+                Write-Message -Message "Invalid or empty content in notebook definition." -Level Error
+                return $null
             }
-        } else {
-            Write-Message -Message "Invalid or empty content in notebook definition." -Level Error
-            return $null
-        }
         }
 
         if ($NotebookPathPlatformDefinition) {
             $notebookEncodedPlatformContent = Encode-ToBase64 -filePath $NotebookPathPlatformDefinition
 
             if (-not [string]::IsNullOrEmpty($notebookEncodedPlatformContent)) {
-                 # Initialize definition if it doesn't exist
-            if (-not $body.definition) {
-                $body.definition = @{
-                    format = "ipynb"
-                    parts  = @()
+                # Initialize definition if it doesn't exist
+                if (-not $body.definition) {
+                    $body.definition = @{
+                        format = "ipynb"
+                        parts  = @()
+                    }
+                }
+
+                # Add new part to the parts array
+                $body.definition.parts += @{
+                    path        = ".platform"
+                    payload     = $notebookEncodedPlatformContent
+                    payloadType = "InlineBase64"
                 }
             }
-
-            # Add new part to the parts array
-            $body.definition.parts += @{
-                path        = ".platform"
-                payload     = $notebookEncodedPlatformContent
-                payloadType = "InlineBase64"
+            else {
+                Write-Message -Message "Invalid or empty content in platform definition." -Level Error
+                return $null
             }
-        } else {
-            Write-Message -Message "Invalid or empty content in platform definition." -Level Error
-            return $null
-        }
         }
 
         $bodyJson = $body | ConvertTo-Json -Depth 10
@@ -184,8 +185,6 @@ function Add-FabricNotebook {
 
                     return $resultResponse
 #>
-
-
                 }
                 else {
                     Write-Message -Message "Operation Failed" -Level Debug

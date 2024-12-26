@@ -1,26 +1,26 @@
 <#
 .SYNOPSIS
-    Monitors the status of a long-running operation in Microsoft Fabric.
+Monitors the status of a long-running operation in Microsoft Fabric.
 
 .DESCRIPTION
-    The Get-FabricLongRunningOperation function queries the Microsoft Fabric API to check the status of a 
-    long-running operation. It periodically polls the operation until it reaches a terminal state (Succeeded or Failed).
+The Get-FabricLongRunningOperation function queries the Microsoft Fabric API to check the status of a 
+long-running operation. It periodically polls the operation until it reaches a terminal state (Succeeded or Failed).
 
 .PARAMETER operationId
-    The unique identifier of the long-running operation to be monitored.
+The unique identifier of the long-running operation to be monitored.
 
 .PARAMETER retryAfter
-    The interval (in seconds) to wait between polling the operation status. The default is 5 seconds.
+The interval (in seconds) to wait between polling the operation status. The default is 5 seconds.
 
 .EXAMPLE
-    PS C:\> Get-FabricLongRunningOperation -operationId "12345-abcd-67890-efgh" -retryAfter 10
+Get-FabricLongRunningOperation -operationId "12345-abcd-67890-efgh" -retryAfter 10
 
-    This command polls the status of the operation with the given operationId every 10 seconds until it completes.
+This command polls the status of the operation with the given operationId every 10 seconds until it completes.
 
 .NOTES
-    - Requires the `$FabricConfig` global object, including `BaseUrl` and `FabricHeaders`.
+- Requires the `$FabricConfig` global object, including `BaseUrl` and `FabricHeaders`.
 
-    .AUTHOR
+.AUTHOR
 Tiago Balabuch
 
 #>

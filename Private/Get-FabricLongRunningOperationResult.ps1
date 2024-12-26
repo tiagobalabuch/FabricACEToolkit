@@ -1,22 +1,22 @@
 <#
 .SYNOPSIS
-    Retrieves the result of a completed long-running operation from the Microsoft Fabric API.
+Retrieves the result of a completed long-running operation from the Microsoft Fabric API.
 
 .DESCRIPTION
-    The Get-FabricLongRunningOperationResult function queries the Microsoft Fabric API to fetch the result 
-    of a specific long-running operation. This is typically used after confirming the operation has completed successfully.
+The Get-FabricLongRunningOperationResult function queries the Microsoft Fabric API to fetch the result 
+of a specific long-running operation. This is typically used after confirming the operation has completed successfully.
 
 .PARAMETER operationId
-    The unique identifier of the completed long-running operation whose result you want to retrieve.
+The unique identifier of the completed long-running operation whose result you want to retrieve.
 
 .EXAMPLE
-    PS C:\> Get-FabricLongRunningOperationResult -operationId "12345-abcd-67890-efgh"
+Get-FabricLongRunningOperationResult -operationId "12345-abcd-67890-efgh"
 
-    This command fetches the result of the operation with the specified operationId.
+This command fetches the result of the operation with the specified operationId.
 
 .NOTES
-    - Ensure the Fabric API headers (e.g., authorization tokens) are defined in $FabricConfig.FabricHeaders.
-    - This function does not handle polling. Ensure the operation is in a terminal state before calling this function.
+- Ensure the Fabric API headers (e.g., authorization tokens) are defined in $FabricConfig.FabricHeaders.
+- This function does not handle polling. Ensure the operation is in a terminal state before calling this function.
 
 .AUTHOR
 Tiago Balabuch

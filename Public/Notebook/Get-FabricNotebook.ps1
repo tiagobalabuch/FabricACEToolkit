@@ -24,7 +24,6 @@ Retrieves all Notebooks in workspace "12345".
 .NOTES
 - Requires `$FabricConfig` global configuration, including `BaseUrl` and `FabricHeaders`.
 - Calls `Test-TokenExpired` to ensure token validity before making the API request.
-- Returns the matching Notebook details or all Notebooks if no filter is provided.
 
 Author: Tiago Balabuch  
 Date: 2024-12-15

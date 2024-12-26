@@ -1,35 +1,39 @@
+
 <#
 .SYNOPSIS
-Retrieves an Notebook or a list of Notebooks from a specified workspace in Microsoft Fabric.
+Retrieves the definition of a notebook from a specific workspace in Microsoft Fabric.
 
 .DESCRIPTION
-The `Get-FabricNotebook` function sends a GET request to the Fabric API to retrieve Notebook details for a given workspace. It can filter the results by `NotebookName`.
+This function fetches the notebook's content or metadata from a workspace. 
+It supports retrieving notebook definitions in the Jupyter Notebook (`ipynb`) format.
+Handles both synchronous and asynchronous operations, with detailed logging and error handling.
 
 .PARAMETER WorkspaceId
-(Mandatory) The ID of the workspace to query Notebooks.
+(Mandatory) The unique identifier of the workspace from which the notebook definition is to be retrieved.
 
-.PARAMETER NotebookName
-(Optional) The name of the specific Notebook to retrieve.
+.PARAMETER NotebookId
+(Optional)The unique identifier of the notebook whose definition needs to be retrieved.
+
+.PARAMETER NotebookFormat
+Specifies the format of the notebook definition. Currently, only 'ipynb' is supported.
+Default: 'ipynb'.
 
 .EXAMPLE
-Get-FabricNotebook -WorkspaceId "12345" -NotebookName "Development"
+Get-FabricNotebookDefinition -WorkspaceId "12345" -NotebookId "67890"
 
-Retrieves the "Development" Notebook from workspace "12345".
+Retrieves the definition of the notebook with ID `67890` from the workspace with ID `12345` in the `ipynb` format.
 
 .EXAMPLE
-Get-FabricNotebook -WorkspaceId "12345"
+Get-FabricNotebookDefinition -WorkspaceId "12345"
 
-Retrieves all Notebooks in workspace "12345".
+Retrieves the definitions of all notebooks in the workspace with ID `12345` in the `ipynb` format.
 
 .NOTES
 - Requires `$FabricConfig` global configuration, including `BaseUrl` and `FabricHeaders`.
 - Calls `Test-TokenExpired` to ensure token validity before making the API request.
-- Returns the matching Notebook details or all Notebooks if no filter is provided.
+- Handles long-running operations asynchronously.
 
-Author: Tiago Balabuch  
-Date: 2024-12-15
 #>
-
 function Get-FabricNotebookDefinition {
     [CmdletBinding()]
     param (
