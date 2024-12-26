@@ -1,36 +1,35 @@
 <#
 .SYNOPSIS
-Retrieves an Eventhouse or a list of Eventhouses from a specified workspace in Microsoft Fabric.
+Retrieves an Eventstream or a list of Eventstreams from a specified workspace in Microsoft Fabric.
 
 .DESCRIPTION
-The `Get-FabricEventhouse` function sends a GET request to the Fabric API to retrieve Eventhouse details for a given workspace. It can filter the results by `EventhouseName`.
+The `Get-FabricEventstream` function sends a GET request to the Fabric API to retrieve Eventstream details for a given workspace. It can filter the results by `EventstreamName`.
 
 .PARAMETER WorkspaceId
-(Mandatory) The ID of the workspace to query Eventhouses.
+(Mandatory) The ID of the workspace to query Eventstreams.
 
-.PARAMETER EventhouseName
-(Optional) The name of the specific Eventhouse to retrieve.
-
-.EXAMPLE
-Get-FabricEventhouse -WorkspaceId "12345" -EventhouseName "Development"
-
-Retrieves the "Development" Eventhouse from workspace "12345".
+.PARAMETER EventstreamName
+(Optional) The name of the specific Eventstream to retrieve.
 
 .EXAMPLE
-Get-FabricEventhouse -WorkspaceId "12345"
+Get-FabricEventstream -WorkspaceId "12345" -EventstreamName "Development"
 
-Retrieves all Eventhouses in workspace "12345".
+Retrieves the "Development" Eventstream from workspace "12345".
+
+.EXAMPLE
+Get-FabricEventstream -WorkspaceId "12345"
+
+Retrieves all Eventstreams in workspace "12345".
 
 .NOTES
 - Requires `$FabricConfig` global configuration, including `BaseUrl` and `FabricHeaders`.
 - Calls `Test-TokenExpired` to ensure token validity before making the API request.
-- Returns the matching Eventhouse details or all Eventhouses if no filter is provided.
 
 Author: Tiago Balabuch  
 Date: 2024-12-15
 #>
 
-function Get-FabricEventhouse {
+function Get-FabricEventstream {
     [CmdletBinding()]
     param (
         [Parameter(Mandatory = $true)]
@@ -39,19 +38,18 @@ function Get-FabricEventhouse {
 
         [Parameter(Mandatory = $false)]
         [ValidateNotNullOrEmpty()]
-        [string]$EventhouseId,
+        [string]$EventstreamId,
 
         [Parameter(Mandatory = $false)]
         [ValidateNotNullOrEmpty()]
         [ValidatePattern('^[a-zA-Z0-9_ ]*$')]
-        [string]$EventhouseName
+        [string]$EventstreamName
     )
 
     try {
-
         # Step 1: Handle ambiguous input
-        if ($EventhouseId -and $EventhouseName) {
-            Write-Message -Message "Both 'EventhouseId' and 'EventhouseName' were provided. Please specify only one." -Level Error
+        if ($EventstreamId -and $EventstreamName) {
+            Write-Message -Message "Both 'EventstreamId' and 'EventstreamName' were provided. Please specify only one." -Level Error
             return $null
         }
 
@@ -61,7 +59,7 @@ function Get-FabricEventhouse {
         Write-Message -Message "Token validation completed." -Level Debug
 
         # Step 3: Construct the API URL
-        $apiEndpointUrl = "{0}/workspaces/{1}/eventhouses" -f $FabricConfig.BaseUrl, $WorkspaceId
+        $apiEndpointUrl = "{0}/workspaces/{1}/eventstreams" -f $FabricConfig.BaseUrl, $WorkspaceId
         Write-Message -Message "API Endpoint: $apiEndpointUrl" -Level Debug
 
         # Step 4: Make the API request
@@ -71,7 +69,6 @@ function Get-FabricEventhouse {
             -Method Get `
             -ErrorAction Stop `
             -SkipHttpErrorCheck `
-            -ResponseHeadersVariable "responseHeader" `
             -StatusCodeVariable "statusCode"
 
         # Step 5: Validate the response code
@@ -89,31 +86,31 @@ function Get-FabricEventhouse {
         }
        
         # Step 7: Filter results based on provided parameters
-        $Eventhouse = if ($EventhouseId) {
-            $response.value | Where-Object { $_.Id -eq $EventhouseId }
+        $Eventstream = if ($EventstreamId) {
+            $response.value | Where-Object { $_.Id -eq $EventstreamId }
         }
-        elseif ($EventhouseName) {
-            $response.value | Where-Object { $_.DisplayName -eq $EventhouseName }
+        elseif ($EventstreamName) {
+            $response.value | Where-Object { $_.DisplayName -eq $EventstreamName }
         }
         else {
             # Return all workspaces if no filter is provided
-            Write-Message -Message "No filter provided. Returning all Eventhouses." -Level Debug
+            Write-Message -Message "No filter provided. Returning all Eventstreams." -Level Debug
             $response.value
         }
 
         # Step 8: Handle results
-        if ($Eventhouse) {
-            return $Eventhouse
+        if ($Eventstream) {
+            return $Eventstream
         }
         else {
-            Write-Message -Message "No Eventhouse found matching the provided criteria." -Level Warning
+            Write-Message -Message "No Eventstream found matching the provided criteria." -Level Warning
             return $null
         }
     }
     catch {
         # Step 9: Capture and log error details
         $errorDetails = $_.Exception.Message
-        Write-Message -Message "Failed to retrieve Eventhouse. Error: $errorDetails" -Level Error
+        Write-Message -Message "Failed to retrieve Eventstream. Error: $errorDetails" -Level Error
     } 
  
 }

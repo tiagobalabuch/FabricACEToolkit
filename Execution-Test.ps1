@@ -3,11 +3,58 @@ Import-Module Az.Account
 Set-ExecutionPolicy Unrestricted 
 Import-Module .\FabricACEToolkit -Force -DisableNameChecking
 Get-Command -Module FabricACEToolkit 
-Set-FabricHeaders -tenantId "2ca1a04f-621b-4a1f-bad6-7ecd3ae78e25" -Debug
+Set-FabricHeaders -tenantId "2ca1a04f-621b-4a1f-bad6-7ecd3ae78e25"
 
-#$a = Get-Command -Module FabricACEToolkit 
-#$a.Count
+$a = Get-Command -Module FabricACEToolkit 
+$a.Count
 
+
+# Eventstream
+
+## Add Eventstream
+$workspace = Get-FabricWorkspace -WorkspaceName "Tiago API"
+Add-FabricEventstream -WorkspaceId $workspace.id -EventstreamName "ES01" -EventstreamDescription "ES Events" # -EventstreamPathDefinition "C:\temp\API\Generate Data.ipynb" -EventstreamPathPlatformDefinition "C:\temp\API\.platform" -Debug
+Add-FabricEventstream -WorkspaceId $workspace.id -EventstreamName "ES02" -EventstreamDescription "ES Events" # -EventstreamPathDefinition "C:\temp\API\Generate Data.ipynb" -EventstreamPathPlatformDefinition "C:\temp\API\.platform" -Debug
+
+## Get Eventstream
+$workspace = Get-FabricWorkspace -WorkspaceName "Tiago API"
+Get-FabricEventstream -WorkspaceId $workspace.id
+Get-FabricEventstream -WorkspaceId $workspace.id -EventstreamName "ES01"
+Get-FabricEventstream -WorkspaceId $workspace.id -EventstreamId "31f22ab2-9244-4fac-88ac-25a6cf3ec5a8"
+
+## Update Eventstream
+$workspace = Get-FabricWorkspace -WorkspaceName "Tiago API"
+$eventstream = Get-FabricEventstream -WorkspaceId $workspace.id -EventstreamName "ES02"
+Update-FabricEventstream -WorkspaceId $workspace.id -EventstreamId $eventstream.id -EventstreamName "ES02 Updated" -EventstreamDescription "ES Events Updated" -Debug
+
+## Remove Eventstream
+$workspace = Get-FabricWorkspace -WorkspaceName "Tiago API"
+$eventstream = Get-FabricEventstream -WorkspaceId $workspace.id -EventstreamName "ES02 Updated"
+Remove-FabricEventstream -WorkspaceId $workspace.id -EventstreamId $eventstream.id -Debug
+
+
+
+
+
+$apiEndpointUrl= "https://api.fabric.microsoft.com/v1/workspaces/26cbd4ed-5920-4f2b-94ab-8e6ffbbdc48d/eventhouses"
+$bodyJson = '{
+  "description": "EH Events",
+  "displayName": "EH04"
+}'
+
+$response = Invoke-RestMethod `
+-Headers $FabricConfig.FabricHeaders `
+-Uri $apiEndpointUrl `
+-Method Post `
+-Body $bodyJson `
+-ContentType "application/json" `
+-ErrorAction Stop `
+-SkipHttpErrorCheck `
+-ResponseHeadersVariable "responseHeader" `
+-StatusCodeVariable "statusCode"
+
+$response
+#################################################################
 # Capacity
 Get-FabricCapacity 
 Get-FabricCapacity -capacityId "6b3297a9-84d0-4f51-99ac-76dda2572ba4"
@@ -251,8 +298,6 @@ $workspace = Get-FabricWorkspace -WorkspaceName "Tiago API"
 $notebook = Get-FabricNotebook -WorkspaceId $workspace.id -NotebookName "Notebook1"
 Remove-FabricNotebook -WorkspaceId $workspace.id -NotebookId $notebook.id -Debug
 
-
-
 ### It must a ipynb file
 $workspace = Get-FabricWorkspace -WorkspaceName "Tiago API"
 Add-FabricNotebook -WorkspaceId $workspace.id `
@@ -263,94 +308,34 @@ Add-FabricNotebook -WorkspaceId $workspace.id `
 
 Get-FabricNotebookDefinition -WorkspaceId $workspace.id -NotebookId "f9da8f99-36c4-4455-9251-91d86af10008"  -NotebookFormat "ipynb" -Debug   
 
-$a.definition.parts
-## Get Notebook Definition
+## Update Notebook Definition
 $workspace = Get-FabricWorkspace -WorkspaceName "Tiago API"
 $notebook = Get-FabricNotebook -WorkspaceId $workspace.id -NotebookName "Notebook120"
 Update-FabricNotebookDefinition -WorkspaceId $workspace.id -NotebookId $notebook.id -NotebookPathDefinition "C:\temp\API\Generate Data.ipynb" -NotebookPathPlatformDefinition "C:\temp\API\.platform" -Debug
 
+# Eventhouse
 
-"https://api.fabric.microsoft.com/v1/workspaces/26cbd4ed-5920-4f2b-94ab-8e6ffbbdc48d/notebooks/f9da8f99-36c4-4455-9251-91d86af10008/getDefinition?format=ipynb"
+## Get Eventhouse
+$workspace = Get-FabricWorkspace -WorkspaceName "Tiago API"
+Get-FabricEventhouse -WorkspaceId $workspace.id
+Get-FabricEventhouse -WorkspaceId $workspace.id -EventhouseName "EH01"
+Get-FabricEventhouse -WorkspaceId $workspace.id -EventhouseId "66ba709c-6531-4658-b189-68c7639b1ad8"
 
+## Add Eventhouse
+$workspace = Get-FabricWorkspace -WorkspaceName "Tiago API"
+Add-FabricEventhouse -WorkspaceId $workspace.id -EventhouseName "EH05" -EventhouseDescription "EH Events" -Debug
 
-$object = $a.definition.parts
-$object 
-foreach ($item in $object ) {
-    $path = $item.path
-    $payload = $item.payload  # Replace with actual property name
+## Update Eventhouse
+$workspace = Get-FabricWorkspace -WorkspaceName "Tiago API"
+$eventhouse = Get-FabricEventhouse -WorkspaceId $workspace.id -EventhouseName "EH05"
+Update-FabricEventhouse -WorkspaceId $workspace.id -EventhouseId $eventhouse.id -EventhouseName "EH05 Updated" -EventhouseDescription "EH Events Updated" -Debug
 
-    Write-Host "Path: $path"
-    Write-Host "Payload: $payload"
+## Remove Eventhouse
+$workspace = Get-FabricWorkspace -WorkspaceName "Tiago API"
+$eventhouse = Get-FabricEventhouse -WorkspaceId $workspace.id -EventhouseName "EH05 Updated"
+Remove-FabricEventhouse -WorkspaceId $workspace.id -EventhouseId $eventhouse.id -Debug
 
-    Decode-FromBase64 -Base64String $payload
-   <# if ($path -eq "notebook-content.py") {
-
-        $fileDefinition = Decode-FromBase64 -Base64String $payload
-
-        $FileFormat = "ipynb"
-        $FileName = "Generate Data"
-
-        # Determine the default Windows path
-        $defaultPath = [Environment]::GetFolderPath("MyDocuments")
-
-        # Construct the full file path
-        $filePath = Join-Path -Path $defaultPath -ChildPath ("{0}.{1}" -f $FileName, $FileFormat)
-
-        # Convert FileDefinition to string if necessary
-        $fileContent = $FileDefinition -as [string]
-
-        # Create the file and write content
-        try {
-            Set-Content -Path $filePath -Value $fileContent -Force
-            Write-Host "File saved successfully to: $filePath"
-        }
-        catch {
-            Write-Warning "Error saving file: $($_.Exception.Message)"
-        }
-    #>
-}
-  
-#    Decode-FromBase64 -Base64String $payload
-
-    Write-Host "---"
-}
-
-$FileDefinition = $defJson  
-$FileFormat = "ipynb"
-$FileName = "Generate Data"
-# Determine the default Windows path
-$defaultPath = [Environment]::GetFolderPath("MyDocuments")
-
-# Construct the full file path
-$filePath = Join-Path -Path $defaultPath -ChildPath ("{0}.{1}" -f $FileName, $FileFormat)
-
-# Convert FileDefinition to string if necessary
-$fileContent = $FileDefinition -as [string]
-
-# Create the file and write content
-try {
-    Set-Content -Path $filePath -Value $fileContent -Force
-    Write-Host "File saved successfully to: $filePath"
-}
-catch {
-    Write-Warning "Error saving file: $($_.Exception.Message)"
-}
-}
-
-$responseHeader["x-ms-operation-id"]
-
-$responseHeader 
-$statusCode
-$header = @{
-    
-    'Authorization' = "Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsIng1dCI6InoxcnNZSEhKOS04bWdndDRIc1p1OEJLa0JQdyIsImtpZCI6InoxcnNZSEhKOS04bWdndDRIc1p1OEJLa0JQdyJ9.eyJhdWQiOiJodHRwczovL2FwaS5mYWJyaWMubWljcm9zb2Z0LmNvbSIsImlzcyI6Imh0dHBzOi8vc3RzLndpbmRvd3MubmV0LzJjYTFhMDRmLTYyMWItNGExZi1iYWQ2LTdlY2QzYWU3OGUyNS8iLCJpYXQiOjE3MzQ5NzUxNzgsIm5iZiI6MTczNDk3NTE3OCwiZXhwIjoxNzM0OTgwNDA2LCJhY2N0IjowLCJhY3IiOiIxIiwiYWlvIjoiQVZRQXEvOFlBQUFBWUFvWFRlb1RpSUEyNkhKaDJreXRiY3R3RVZUTnhXVTcyNmVlcVlieTQ0clhMd0VkU0xkQ3ZzR1J1cFRjMEEza0U3TUFVRVV6U1Y5dENzSDRmRjYzRVBYM2t2MTB4eFdJQy90VElnblJwYWs9IiwiYW1yIjpbInB3ZCIsInJzYSIsIm1mYSJdLCJhcHBpZCI6IjE5NTBhMjU4LTIyN2ItNGUzMS1hOWNmLTcxNzQ5NTk0NWZjMiIsImFwcGlkYWNyIjoiMCIsImRldmljZWlkIjoiMDY3NTQ0ODYtNGFkNS00NmRiLTg2NzgtN2IyZTI2YWQ4YzEwIiwiZmFtaWx5X25hbWUiOiJCYWxhYnVjaCIsImdpdmVuX25hbWUiOiJUaWFnbyIsImlkdHlwIjoidXNlciIsImlwYWRkciI6Ijg1LjI0Mi4yMjkuNjMiLCJuYW1lIjoiVGlhZ28gQmFsYWJ1Y2giLCJvaWQiOiI4MTNhYmI0YS00MTRjLTRhYzAtOWMyYy1iZDE3MDM2ZmQ1OGMiLCJwdWlkIjoiMTAwMzIwMDNBM0U1M0NGNiIsInB3ZF91cmwiOiJodHRwczovL3BvcnRhbC5taWNyb3NvZnRvbmxpbmUuY29tL0NoYW5nZVBhc3N3b3JkLmFzcHgiLCJyaCI6IjEuQWIwQVQ2Q2hMQnRpSDBxNjFuN05PdWVPSlFrQUFBQUFBQUFBd0FBQUFBQUFBQUFEQVh1OUFBLiIsInNjcCI6InVzZXJfaW1wZXJzb25hdGlvbiIsInNpZ25pbl9zdGF0ZSI6WyJrbXNpIl0sInN1YiI6ImlDemxaYWNCUkZqV0dQaUR5NEItVlM3Smx6dUg1aXJjSUZ4alhycE5mOWsiLCJ0aWQiOiIyY2ExYTA0Zi02MjFiLTRhMWYtYmFkNi03ZWNkM2FlNzhlMjUiLCJ1bmlxdWVfbmFtZSI6InRpYWdvLmJhbGFidWNoQE0zNjV4NjI2ODUzNDIub25taWNyb3NvZnQuY29tIiwidXBuIjoidGlhZ28uYmFsYWJ1Y2hATTM2NXg2MjY4NTM0Mi5vbm1pY3Jvc29mdC5jb20iLCJ1dGkiOiJTVXdlZWJxY0trS2lHNFl2WWZpZEFBIiwidmVyIjoiMS4wIiwid2lkcyI6WyI2MmU5MDM5NC02OWY1LTQyMzctOTE5MC0wMTIxNzcxNDVlMTAiLCJhOWVhODk5Ni0xMjJmLTRjNzQtOTUyMC04ZWRjZDE5MjgyNmMiLCJiNzlmYmY0ZC0zZWY5LTQ2ODktODE0My03NmIxOTRlODU1MDkiXSwieG1zX2NjIjpbIkNQMSJdLCJ4bXNfaWRyZWwiOiIxIDQifQ.XtmZb7EVKPsZfehnay1hZZl1saDx6Wb4--P19_jbozxI3TWr_6lZSiSV33u6rAOM_aHGvSWmk65vt45uIxacfxSg-MLBa45o52l2dIo7t6c6aLOYnWuVT-x4tDPrt_4NPPhyOo51WWlpCPcf0E0sCTnEVcCMg5vcUWw3htuFMyOavZcrqVZb03qT_HMet1CqlLO_vycbKRD2iMudLmwcDqNKGwKt6TJFTypMdho59_bHthYf6WdI2g86S_oEG03pR7-p0lcpgGM8RRWpUPBht3EY4tmfH-WWnAOZ36ZGJk6kOFouOBJpJyCcZADMKUy69JJGwxdsYMulJa42Qmg-hA"
-}
-https://api.fabric.microsoft.com/v1/operations/16bcaa8f-c2e7-4cc9-b51e-5a1138ada56f
-$apiEndpointUrl = "https://api.fabric.microsoft.com/v1/operations/16bcaa8f-c2e7-4cc9-b51e-5a1138ada56f"
-$response = Invoke-RestMethod `
-                -Headers $FabricConfig.FabricHeaders `
-                -Uri $apiEndpointUrl `
-                -Method Get `
-                -ErrorAction Stop `
-                -ResponseHeadersVariable responseHeader `
-                -StatusCodeVariable statusCode
+## Get Eventhouse Definition
+$workspace = Get-FabricWorkspace -WorkspaceName "Tiago API"
+$eventhouse = Get-FabricEventhouse -WorkspaceId $workspace.id -EventhouseName "EH01"
+Get-FabricEventhouseDefinition -WorkspaceId $workspace.id -EventhouseId $eventhouse.id -Debug

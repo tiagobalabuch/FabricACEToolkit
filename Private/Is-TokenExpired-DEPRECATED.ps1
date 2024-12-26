@@ -23,7 +23,7 @@ Checks the token expiration status using the provided `$config` object.
 Tiago Balabuch
 #>
 get-verb
-function Is-TokenExpired {
+function Is-TokenExpired-DEPRECATED {
     [CmdletBinding()]
     param (
  #       [Parameter(Mandatory)]
