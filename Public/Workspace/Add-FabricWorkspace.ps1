@@ -40,13 +40,13 @@ function Add-FabricWorkspace {
 
     try {
         # Step 1: Ensure token validity
-        #Write-Message -Message "Validating token..." -Level Info
+        Write-Message -Message "Validating token..." -Level Debug
         Test-TokenExpired
-        #Write-Message -Message "Token validation completed." -Level Info
+        Write-Message -Message "Token validation completed." -Level Debug
 
         # Step 2: Construct the API URL
         $apiEndpointUrl = "{0}/workspaces" -f $FabricConfig.BaseUrl
-        Write-Message -Message "API Endpoint: $apiEndpointUrl" -Level Message
+        Write-Message -Message "API Endpoint: $apiEndpointUrl" -Level Debug
 
         # Step 3: Construct the request body
         $body = @{
@@ -63,10 +63,19 @@ function Add-FabricWorkspace {
 
         # Convert the body to JSON
         $bodyJson = $body | ConvertTo-Json -Depth 2
-        #Write-Message -Message "Request Body: $bodyJson" -Level Message
+        Write-Message -Message "Request Body: $bodyJson" -Level Debug
 
         # Step 4: Make the API request
-        $response = Invoke-RestMethod -Headers $FabricConfig.FabricHeaders -Uri $apiEndpointUrl -Method Post -Body $bodyJson -ContentType "application/json" -ErrorAction Stop -SkipHttpErrorCheck -StatusCodeVariable "statusCode"
+        $response = Invoke-RestMethod `
+            -Headers $FabricConfig.FabricHeaders `
+            -Uri $apiEndpointUrl `
+            -Method Post `
+            -Body $bodyJson `
+            -ContentType "application/json" `
+            -ErrorAction Stop `
+            -SkipHttpErrorCheck `
+            -ResponseHeadersVariable "responseHeader" `
+            -StatusCodeVariable "statusCode"
 
         # Step 5: Handle and log the response
         switch ($statusCode) {
@@ -76,7 +85,26 @@ function Add-FabricWorkspace {
             }
             202 {
                 Write-Message -Message "Workspace '$WorkspaceName' creation accepted. Provisioning in progress!" -Level Info
-                return $response
+                [string]$operationId = $responseHeader["x-ms-operation-id"]
+                Write-Message -Message "Operation ID: '$operationId'" -Level Debug
+                Write-Message -Message "Getting Long Running Operation status" -Level Debug
+               
+                $operationStatus = Get-FabricLongRunningOperation -operationId $operationId
+                Write-Message -Message "Long Running Operation status: $operationStatus" -Level Debug
+                # Handle operation result
+                if ($operationStatus.status -eq "Succeeded") {
+                    Write-Message -Message "Operation Succeeded" -Level Debug
+                    Write-Message -Message "Getting Long Running Operation result" -Level Debug
+                
+                    $operationResult = Get-FabricLongRunningOperationResult -operationId $operationId
+                    Write-Message -Message "Long Running Operation status: $operationResult" -Level Debug
+                
+                    return $operationResult
+                }
+                else {
+                    Write-Message -Message "Operation Failed" -Level Debug
+                    return $operationStatus
+                }  
             }
             default {
                 Write-Message -Message "Unexpected response code: $statusCode" -Level Error

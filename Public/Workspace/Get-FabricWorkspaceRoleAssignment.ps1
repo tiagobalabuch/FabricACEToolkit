@@ -43,16 +43,23 @@ function Get-FabricWorkspaceRoleAssignment {
 
     try {
         # Step 1: Ensure token validity
-        #Write-Message -Message "Validating token..." -Level Info
+        Write-Message -Message "Validating token..." -Level Debug
         Test-TokenExpired
-        #Write-Message -Message "Token validation completed." -Level Info
+        Write-Message -Message "Token validation completed." -Level Debug
 
         # Step 2: Construct the API URL
         $apiEndpointUrl = "{0}/workspaces/{1}/roleAssignments" -f $FabricConfig.BaseUrl, $WorkspaceId
-        Write-Message -Message "API Endpoint: $apiEndpointUrl" -Level Message
+        Write-Message -Message "API Endpoint: $apiEndpointUrl" -Level Debug
 
         # Step 3: Make the API request
-        $response = Invoke-RestMethod -Headers $FabricConfig.FabricHeaders -Uri $apiEndpointUrl -Method Get -ErrorAction Stop -SkipHttpErrorCheck -StatusCodeVariable "statusCode"
+        $response = Invoke-RestMethod `
+            -Headers $FabricConfig.FabricHeaders `
+            -Uri $apiEndpointUrl `
+            -Method Get `
+            -ErrorAction Stop `
+            -SkipHttpErrorCheck `
+            -ResponseHeadersVariable "responseHeader" `
+            -StatusCodeVariable "statusCode"
 
         # Step 4: Validate the response code
         if ($statusCode -ne 200) {
@@ -78,7 +85,7 @@ function Get-FabricWorkspaceRoleAssignment {
 
         # Step 8: Handle results
         if ($roleAssignments) {
-            Write-Message -Message "Found $($roleAssignments.Count) role assignments for WorkspaceId '$WorkspaceId'." -Level Message
+            Write-Message -Message "Found $($roleAssignments.Count) role assignments for WorkspaceId '$WorkspaceId'." -Level Debug
             # Transform data into custom objects
             $results = foreach ($obj in $roleAssignments) {
                 [PSCustomObject]@{

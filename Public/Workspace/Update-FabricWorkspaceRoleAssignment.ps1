@@ -50,9 +50,9 @@ function Update-FabricWorkspaceRoleAssignment {
 
     try {
         # Step 1: Ensure token validity
-        #Write-Message -Message "Validating token..." -Level Info
+        Write-Message -Message "Validating token..." -Level Debug
         Test-TokenExpired
-        #Write-Message -Message "Token validation completed." -Level Info
+        Write-Message -Message "Token validation completed." -Level Debug
 
         # Step 2: Construct the API URL
         $apiEndpointUrl = "{0}/workspaces/{1}/roleAssignments/{2}" -f $FabricConfig.BaseUrl, $WorkspaceId, $WorkspaceRoleAssignmentId
@@ -65,10 +65,19 @@ function Update-FabricWorkspaceRoleAssignment {
 
         # Convert the body to JSON
         $bodyJson = $body | ConvertTo-Json -Depth 4 -Compress
-        #Write-Message -Message "Request Body: $bodyJson" -Level Info
+        Write-Message -Message "Request Body: $bodyJson" -Level Debug
 
         # Step 4: Make the API request
-        $response = Invoke-RestMethod -Headers $FabricConfig.FabricHeaders -Uri $apiEndpointUrl -Method Patch -Body $bodyJson -ContentType "application/json" -ErrorAction Stop -SkipHttpErrorCheck -StatusCodeVariable "statusCode"
+        $response = Invoke-RestMethod `
+            -Headers $FabricConfig.FabricHeaders `
+            -Uri $apiEndpointUrl `
+            -Method Patch `
+            -Body $bodyJson `
+            -ContentType "application/json" `
+            -ErrorAction Stop `
+            -SkipHttpErrorCheck `
+            -ResponseHeadersVariable "responseHeader" `
+            -StatusCodeVariable "statusCode"
 
         # Step 5: Validate the response code
         if ($statusCode -ne 200) {
@@ -89,9 +98,6 @@ function Update-FabricWorkspaceRoleAssignment {
             
     }
     catch {
-        # Log and handle errors
-        $errorDetails = $_.Exception.Message
-        Write-Message -Message "Failed to update role assignment. Error: $errorDetails" -Level Error
         # Step 7: Handle and log errors
         $errorDetails = $_.Exception.Message
         Write-Message -Message "Failed to update role assignment. Error: $errorDetails" -Level Error

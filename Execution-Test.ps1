@@ -3,7 +3,7 @@ Import-Module Az.Account
 Set-ExecutionPolicy Unrestricted 
 Import-Module .\FabricACEToolkit -Force -DisableNameChecking
 Get-Command -Module FabricACEToolkit 
-Set-FabricHeaders -tenantId "2ca1a04f-621b-4a1f-bad6-7ecd3ae78e25"
+Set-FabricHeaders -tenantId "2ca1a04f-621b-4a1f-bad6-7ecd3ae78e25" -Debug
 
 #$a = Get-Command -Module FabricACEToolkit 
 #$a.Count
@@ -15,8 +15,8 @@ Get-FabricCapacity -capacityName "tiagocapacity"
 Add-FabricWorkspace -WorkspaceName "Tiago API"
 
 # Get Workspace
-Get-FabricWorkspace
-Get-FabricWorkspace -WorkspaceName "Tiago API"
+Get-FabricWorkspace -Debug
+Get-FabricWorkspace -WorkspaceName "Tiago API" -Debug
 Get-FabricWorkspace -WorkspaceId "dda81258-3461-4135-b4db-71552064e50ac" # ID does not exist
 
 # Add Workspace

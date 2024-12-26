@@ -51,15 +51,24 @@ function Get-FabricWorkspace {
         }
 
         # Step 2: Ensure token validity
+        Write-Message -Message "Validating token..." -Level Debug
         Test-TokenExpired
+        Write-Message -Message "Token validation completed." -Level Debug
 
         # Step 3: Construct the API URL
         $apiEndpointUrl = "{0}/workspaces" -f $FabricConfig.BaseUrl
-        Write-Message -Message "API Endpoint: $apiEndpointUrl" -Level Message
+        Write-Message -Message "API Endpoint: $apiEndpointUrl" -Level Debug
 
         # Step 4: Make the API request
-        $response = Invoke-RestMethod -Headers $FabricConfig.FabricHeaders -Uri $apiEndpointUrl -Method Get -ErrorAction Stop -SkipHttpErrorCheck -StatusCodeVariable "statusCode"
-        
+        $response = Invoke-RestMethod `
+        -Headers $FabricConfig.FabricHeaders `
+        -Uri $apiEndpointUrl `
+        -Method Get `
+        -ErrorAction Stop `
+        -SkipHttpErrorCheck `
+        -ResponseHeadersVariable "responseHeader" `
+        -StatusCodeVariable "statusCode"
+
         # Step 5: Validate the response code
         if ($statusCode -ne 200) {
             Write-Message -Message "Unexpected response code: $statusCode from the API." -Level Error
@@ -83,7 +92,7 @@ function Get-FabricWorkspace {
         }
         else {
             # Return all workspaces if no filter is provided
-            Write-Message -Message "No filter provided. Returning all workspaces." -Level Info
+            Write-Message -Message "No filter provided. Returning all workspaces." -Level Debug
             #return 
             $response.value
         }

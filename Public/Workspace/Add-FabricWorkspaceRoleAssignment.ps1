@@ -54,13 +54,13 @@ function Add-FabricWorkspaceRoleAssignment {
 
     try {
         # Step 1: Ensure token validity
-        #Write-Message -Message "Validating token..." -Level Info
+        Write-Message -Message "Validating token..." -Level Debug
         Test-TokenExpired
-        #Write-Message -Message "Token validation completed." -Level Info
+        Write-Message -Message "Token validation completed." -Level Debug
 
         # Step 2: Construct the API URL
         $apiEndpointUrl = "{0}/workspaces/{1}/roleAssignments" -f $FabricConfig.BaseUrl, $WorkspaceId
-        Write-Message -Message "API Endpoint: $apiEndpointUrl" -Level Message
+        Write-Message -Message "API Endpoint: $apiEndpointUrl" -Level Debug
 
         # Step 3: Construct the request body
         $body = @{
@@ -73,10 +73,19 @@ function Add-FabricWorkspaceRoleAssignment {
 
         # Convert the body to JSON
         $bodyJson = $body | ConvertTo-Json -Depth 4
-        #Write-Message -Message "Request Body: $bodyJson" -Level Message
+        Write-Message -Message "Request Body: $bodyJson" -Level Debug
 
         # Step 4: Make the API request
-        $response = Invoke-RestMethod -Headers $FabricConfig.FabricHeaders -Uri $apiEndpointUrl -Method Post -Body $bodyJson -ContentType "application/json" -ErrorAction Stop -SkipHttpErrorCheck -StatusCodeVariable "statusCode"
+        $response = Invoke-RestMethod `
+            -Headers $FabricConfig.FabricHeaders `
+            -Uri $apiEndpointUrl `
+            -Method Post `
+            -Body $bodyJson `
+            -ContentType "application/json" `
+            -ErrorAction Stop `
+            -SkipHttpErrorCheck `
+            -ResponseHeadersVariable "responseHeader" `
+            -StatusCodeVariable "statusCode"
 
         # Step 5: Validate the response code
         if ($statusCode -ne 201) {

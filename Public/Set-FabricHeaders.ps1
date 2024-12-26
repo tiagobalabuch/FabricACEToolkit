@@ -32,38 +32,37 @@ function Set-FabricHeaders {
     )
 
     try {
-        # Log the tenant being accessed
+        # Step 1: Connect to the Azure account
         Write-Message -Message "Logging in to Azure tenant: $TenantId" -Level Info
-
-        # Connect to the Azure account
         Connect-AzAccount -Tenant $TenantId -ErrorAction Stop | Out-Null
 
-        # Retrieve the access token for the Fabric API
+        # Step 2: Retrieve the access token for the Fabric API
+        Write-Message -Message "Retrieve the access token for the Fabric API: $TenantId" -Level Debug
         $fabricToken = Get-AzAccessToken -AsSecureString -ResourceUrl $FabricConfig.ResourceUrl -ErrorAction Stop -WarningAction SilentlyContinue
 
-        # Extract the plain token from the secure string
+        ## Step 2: Extract the plain token from the secure string
+        Write-Message -Message "Extract the plain token from the secure string" -Level Debug
         $plainToken = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto(
             [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($fabricToken.Token)
         )
 
-        # Set the headers in the global configuration
+        ## Step 3: Set the headers in the global configuration
+        Write-Message -Message "Set the headers in the global configuration" -Level Debug
         $FabricConfig.FabricHeaders = @{
             'Content-Type'  = 'application/json'
             'Authorization' = "Bearer $plainToken"
         }
 
-        # Update token metadata in the global configuration
+        ## Step 4: Update token metadata in the global configuration
+        Write-Message -Message "Update token metadata in the global configuration" -Level Debug
         $FabricConfig.TokenExpiresOn = $fabricToken.ExpiresOn
         $FabricConfig.TenantIdGlobal = $TenantId
 
-        # Log success message
         Write-Message -Message "Fabric token successfully configured." -Level Info
     }
     catch {
-        # Log detailed error messages
-        # $errorDetails = $_.Exception.Message
-
-        $errorDetails = Get-ErrorResponse($_.Exception)
+        # Step 5: Handle and log errors
+        $errorDetails = $_.Exception.Message
         Write-Message -Message "Failed to set Fabric token: $errorDetails" -Level Error
         throw "Unable to configure Fabric token. Ensure tenant and API configurations are correct."
     }
