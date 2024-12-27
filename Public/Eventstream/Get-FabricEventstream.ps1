@@ -82,7 +82,7 @@ function Get-FabricEventstream {
                 -SkipHttpErrorCheck `
                 -StatusCodeVariable "statusCode"
 
-            # Step 5: Validate the response code
+            # Step 6: Validate the response code
             if ($statusCode -ne 200) {
                 Write-Message -Message "Unexpected response code: $statusCode from the API." -Level Error
                 Write-Message -Message "Error: $($response.message)" -Level Error
@@ -106,7 +106,7 @@ function Get-FabricEventstream {
             }
         } while ($null -ne $continuationToken)
        
-        # Step 7: Filter results based on provided parameters
+        # Step 8: Filter results based on provided parameters
         $eventstream = if ($EventstreamId) {
             $eventstreams | Where-Object { $_.Id -eq $EventstreamId }
         }
@@ -119,7 +119,7 @@ function Get-FabricEventstream {
             $response.value
         }
 
-        # Step 8: Handle results
+        # Step 9: Handle results
         if ($eventstream) {
             return $eventstream
         }
@@ -129,7 +129,7 @@ function Get-FabricEventstream {
         }
     }
     catch {
-        # Step 9: Capture and log error details
+        # Step 10: Capture and log error details
         $errorDetails = $_.Exception.Message
         Write-Message -Message "Failed to retrieve Eventstream. Error: $errorDetails" -Level Error
     } 

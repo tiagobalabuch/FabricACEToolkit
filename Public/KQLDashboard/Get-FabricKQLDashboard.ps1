@@ -1,55 +1,55 @@
 <#
 .SYNOPSIS
-Retrieves a Fabric capacity by its ID, Display Name, or returns all capacities if no filter is provided.
+Retrieves an KQLDashboard or a list of KQLDashboards from a specified workspace in Microsoft Fabric.
 
 .DESCRIPTION
-The `Get-FabricCapacity` function interacts with the Fabric API to retrieve capacity details. It can filter by `capacityId` or `capacityName`, or return all available capacities if no filter is specified.
+The `Get-FabricKQLDashboard` function sends a GET request to the Fabric API to retrieve KQLDashboard details for a given workspace. It can filter the results by `KQLDashboardName`.
 
-.PARAMETER capacityId
-(Optional) The unique identifier of the Fabric capacity to retrieve.
+.PARAMETER WorkspaceId
+(Mandatory) The ID of the workspace to query KQLDashboards.
 
-.PARAMETER capacityName
-(Optional) The display name of the Fabric capacity to retrieve.
-
-.EXAMPLE
-Get-FabricCapacity -capacityId "12345"
-
-Retrieve a Fabric capacity by its unique ID.
+.PARAMETER KQLDashboardName
+(Optional) The name of the specific KQLDashboard to retrieve.
 
 .EXAMPLE
-Get-FabricCapacity -capacityName "MyCapacity"
+Get-FabricKQLDashboard -WorkspaceId "12345" -KQLDashboardName "Development"
 
-Retrieve a Fabric capacity by its display name.
+Retrieves the "Development" KQLDashboard from workspace "12345".
 
 .EXAMPLE
-Get-FabricCapacity
+Get-FabricKQLDashboard -WorkspaceId "12345"
 
-Retrieve all available capacities.
+Retrieves all KQLDashboards in workspace "12345".
 
 .NOTES
-- Requires the `$FabricConfig` global object, including `BaseUrl` and `FabricHeaders`.
-- Uses `Test-TokenExpired` to validate the token before making API calls.
+- Requires `$FabricConfig` global configuration, including `BaseUrl` and `FabricHeaders`.
+- Calls `Test-TokenExpired` to ensure token validity before making the API request.
 
 Author: Tiago Balabuch  
-Date: 2024-12-12
+Date: 2024-12-15
 #>
 
-function Get-FabricCapacityContinuationToken {
+function Get-FabricKQLDashboard {
     [CmdletBinding()]
     param (
-        [Parameter(Mandatory = $false)]
+        [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
-        [string]$capacityId,
+        [string]$WorkspaceId,
 
         [Parameter(Mandatory = $false)]
         [ValidateNotNullOrEmpty()]
-        [string]$capacityName
+        [string]$KQLDashboardId,
+
+        [Parameter(Mandatory = $false)]
+        [ValidateNotNullOrEmpty()]
+        [ValidatePattern('^[a-zA-Z0-9_ ]*$')]
+        [string]$KQLDashboardName
     )
 
     try {
         # Step 1: Handle ambiguous input
-        if ($capacityId -and $capacityName) {
-            Write-Message -Message "Both 'capacityId' and 'capacityName' were provided. Please specify only one." -Level Error
+        if ($KQLDashboardId -and $KQLDashboardName) {
+            Write-Message -Message "Both 'KQLDashboardId' and 'KQLDashboardName' were provided. Please specify only one." -Level Error
             return $null
         }
 
@@ -59,10 +59,9 @@ function Get-FabricCapacityContinuationToken {
         Write-Message -Message "Token validation completed." -Level Debug
 
         $continuationToken = $null
-        $capacities = @()
+        $KQLDashboards = @()
 
-        $apiEndpointUrl = "{0}/capacities" -f $FabricConfig.BaseUrl
-
+        $apiEndpointUrl = "{0}/workspaces/{1}/kqlDashboards" -f $FabricConfig.BaseUrl, $WorkspaceId
         # Step 3:  Loop to retrieve data with continuation token
         do {
             # Step 4: Construct the API URL
@@ -81,7 +80,6 @@ function Get-FabricCapacityContinuationToken {
                 -Method Get `
                 -ErrorAction Stop `
                 -SkipHttpErrorCheck `
-                -ResponseHeadersVariable "responseHeader" `
                 -StatusCodeVariable "statusCode"
 
             # Step 6: Validate the response code
@@ -91,11 +89,11 @@ function Get-FabricCapacityContinuationToken {
                 Write-Message "Error Code: $($response.errorCode)" -Level Error
                 return $null
             }
-
+                    
             # Step 7: Add data to the list
             if ($null -ne $response) {
                 Write-Message -Message "Adding data to the list" -Level Debug
-                $capacities += $response.value
+                $KQLDashboards += $response.value
         
                 # Update the continuation token
                 Write-Message -Message "Updating the continuation token" -Level Debug
@@ -107,34 +105,33 @@ function Get-FabricCapacityContinuationToken {
                 break
             }
         } while ($null -ne $continuationToken)
-
+       
         # Step 8: Filter results based on provided parameters
-        $capacity = if ($capacityId) {
-            $capacities | Where-Object { $_.Id -eq $capacityId }
+        $KQLDashboard = if ($KQLDashboardId) {
+            $KQLDashboards | Where-Object { $_.Id -eq $KQLDashboardId }
         }
-        elseif ($capacityName) {
-            $capacities | Where-Object { $_.DisplayName -eq $capacityName }
+        elseif ($KQLDashboardName) {
+            $KQLDashboards | Where-Object { $_.DisplayName -eq $KQLDashboardName }
         }
         else {
-            # No filter, return all capacities
-            Write-Message -Message "No filter specified. Returning all capacities." -Level Debug
-            return $capacities
+            # Return all workspaces if no filter is provided
+            Write-Message -Message "No filter provided. Returning all KQLDashboards." -Level Debug
+            $response.value
         }
 
         # Step 9: Handle results
-        if ($capacity) {
-            Write-Message -Message "Capacity found matching the specified criteria." -Level Debug
-            return $capacity
+        if ($KQLDashboard) {
+            return $KQLDashboard
         }
         else {
-            Write-Message -Message "No capacity found matching the specified criteria." -Level Warning
+            Write-Message -Message "No KQLDashboard found matching the provided criteria." -Level Warning
             return $null
         }
     }
     catch {
         # Step 10: Capture and log error details
         $errorDetails = $_.Exception.Message
-        Write-Message -Message "Failed to retrieve capacity. Error: $errorDetails" -Level Error
-        return $null
-    }
+        Write-Message -Message "Failed to retrieve KQLDashboard. Error: $errorDetails" -Level Error
+    } 
+ 
 }

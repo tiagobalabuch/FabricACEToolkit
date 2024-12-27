@@ -85,7 +85,7 @@ function Get-FabricEventhouse {
                 -ResponseHeadersVariable "responseHeader" `
                 -StatusCodeVariable "statusCode"
 
-            # Step 5: Validate the response code
+            # Step 6: Validate the response code
             if ($statusCode -ne 200) {
                 Write-Message -Message "Unexpected response code: $statusCode from the API." -Level Error
                 Write-Message -Message "Error: $($response.message)" -Level Error
@@ -109,7 +109,7 @@ function Get-FabricEventhouse {
             }
         } while ($null -ne $continuationToken)
        
-        # Step 7: Filter results based on provided parameters
+        # Step 8: Filter results based on provided parameters
         $eventhouse = if ($EventhouseId) {
             $eventhouses | Where-Object { $_.Id -eq $EventhouseId }
         }
@@ -122,7 +122,7 @@ function Get-FabricEventhouse {
             $eventhouses
         }
 
-        # Step 8: Handle results
+        # Step 9: Handle results
         if ($eventhouse) {
             return $eventhouse
         }
@@ -132,7 +132,7 @@ function Get-FabricEventhouse {
         }
     }
     catch {
-        # Step 9: Capture and log error details
+        # Step 10: Capture and log error details
         $errorDetails = $_.Exception.Message
         Write-Message -Message "Failed to retrieve Eventhouse. Error: $errorDetails" -Level Error
     } 
