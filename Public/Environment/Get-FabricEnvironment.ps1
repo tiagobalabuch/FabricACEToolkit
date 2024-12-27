@@ -59,48 +59,70 @@ function Get-FabricEnvironment {
         Test-TokenExpired
         Write-Message -Message "Token validation completed." -Level Debug
 
-        # Step 3: Construct the API URL
+        $continuationToken = $null
+        $environments = @()
+
         $apiEndpointUrl = "{0}/workspaces/{1}/environments" -f $FabricConfig.BaseUrl, $WorkspaceId
-        Write-Message -Message "API Endpoint: $apiEndpointUrl" -Level Debug
+        
+        # Step 3:  Loop to retrieve data with continuation token
+        do {
+            # Step 4: Construct the API URL
+            $apiEndpointUrl = if ($null -ne $continuationToken) {
+                "{0}?continuationToken={1}" -f $apiEndpointUrl, $continuationToken
+            }
+            else {
+                $apiEndpointUrl
+            }
+            Write-Message -Message "API Endpoint: $apiEndpointUrl" -Level Debug
 
-        # Step 4: Make the API request
-        $response = Invoke-RestMethod `
-            -Headers $FabricConfig.FabricHeaders `
-            -Uri $apiEndpointUrl `
-            -Method Get `
-            -ErrorAction Stop `
-            -SkipHttpErrorCheck `
-            -ResponseHeadersVariable "responseHeader" `
-            -StatusCodeVariable "statusCode"
+            # Step 5: Make the API request
+            $response = Invoke-RestMethod `
+                -Headers $FabricConfig.FabricHeaders `
+                -Uri $apiEndpointUrl `
+                -Method Get `
+                -ErrorAction Stop `
+                -SkipHttpErrorCheck `
+                -ResponseHeadersVariable "responseHeader" `
+                -StatusCodeVariable "statusCode"
 
-        # Step 5: Validate the response code
-        if ($statusCode -ne 200) {
-            Write-Message -Message "Unexpected response code: $statusCode from the API." -Level Error
-            Write-Message -Message "Error: $($response.message)" -Level Error
-            Write-Message "Error Code: $($response.errorCode)" -Level Error
-            return $null
-        }
-                    
-        # Step 6: Handle empty response
-        if (-not $response) {
-            Write-Message -Message "No data returned from the API." -Level Warning
-            return $null
-        }
+            # Step 6: Validate the response code
+            if ($statusCode -ne 200) {
+                Write-Message -Message "Unexpected response code: $statusCode from the API." -Level Error
+                Write-Message -Message "Error: $($response.message)" -Level Error
+                Write-Message "Error Code: $($response.errorCode)" -Level Error
+                return $null
+            }
+
+            # Step 7: Add data to the list
+            if ($null -ne $response) {
+                Write-Message -Message "Adding data to the list" -Level Debug
+                $environments += $response.value
+
+                # Update the continuation token
+                Write-Message -Message "Updating the continuation token" -Level Debug
+                $continuationToken = $response.continuationToken
+                Write-Message -Message "Continuation token: $continuationToken" -Level Debug
+            }
+            else {
+                Write-Message -Message "No data received from the API." -Level Warning
+                break
+            }
+        } while ($null -ne $continuationToken)
        
-        # Step 7: Filter results based on provided parameters
+        # Step 8: Filter results based on provided parameters
         $environment = if ($EnvironmentId) {
-            $response.value | Where-Object { $_.Id -eq $EnvironmentId }
+            $environments | Where-Object { $_.Id -eq $EnvironmentId }
         }
         elseif ($EnvironmentName) {
-            $response.value | Where-Object { $_.DisplayName -eq $EnvironmentName }
+            $environments | Where-Object { $_.DisplayName -eq $EnvironmentName }
         }
         else {
             # Return all workspaces if no filter is provided
             Write-Message -Message "No filter provided. Returning all environments." -Level Debug
-            $response.value
+            $environments
         }
 
-        # Step 8: Handle results
+        # Step 9: Handle results
         if ($environment) {
             return $environment
         }
@@ -110,7 +132,7 @@ function Get-FabricEnvironment {
         }
     }
     catch {
-        # Step 9: Capture and log error details
+        # Step 10: Capture and log error details
         $errorDetails = $_.Exception.Message
         Write-Message -Message "Failed to retrieve environment. Error: $errorDetails" -Level Error
     } 

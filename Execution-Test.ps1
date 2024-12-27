@@ -9,54 +9,24 @@ $a = Get-Command -Module FabricACEToolkit
 $a.Count
 
 
-# Eventstream
-
-## Add Eventstream
-$workspace = Get-FabricWorkspace -WorkspaceName "Tiago API"
-Add-FabricEventstream -WorkspaceId $workspace.id -EventstreamName "ES01" -EventstreamDescription "ES Events" # -EventstreamPathDefinition "C:\temp\API\Generate Data.ipynb" -EventstreamPathPlatformDefinition "C:\temp\API\.platform" -Debug
-Add-FabricEventstream -WorkspaceId $workspace.id -EventstreamName "ES02" -EventstreamDescription "ES Events" # -EventstreamPathDefinition "C:\temp\API\Generate Data.ipynb" -EventstreamPathPlatformDefinition "C:\temp\API\.platform" -Debug
-
-## Get Eventstream
-$workspace = Get-FabricWorkspace -WorkspaceName "Tiago API"
-Get-FabricEventstream -WorkspaceId $workspace.id
-Get-FabricEventstream -WorkspaceId $workspace.id -EventstreamName "ES01"
-Get-FabricEventstream -WorkspaceId $workspace.id -EventstreamId "31f22ab2-9244-4fac-88ac-25a6cf3ec5a8"
-
-## Update Eventstream
-$workspace = Get-FabricWorkspace -WorkspaceName "Tiago API"
-$eventstream = Get-FabricEventstream -WorkspaceId $workspace.id -EventstreamName "ES02"
-Update-FabricEventstream -WorkspaceId $workspace.id -EventstreamId $eventstream.id -EventstreamName "ES02 Updated" -EventstreamDescription "ES Events Updated" -Debug
-
-## Remove Eventstream
-$workspace = Get-FabricWorkspace -WorkspaceName "Tiago API"
-$eventstream = Get-FabricEventstream -WorkspaceId $workspace.id -EventstreamName "ES02 Updated"
-Remove-FabricEventstream -WorkspaceId $workspace.id -EventstreamId $eventstream.id -Debug
 
 
 
 
+$apiEndpointUrl= "https://api.fabric.microsoft.com/v1/capacities"
+$a = Invoke-RestMethod `
+        -Headers $FabricConfig.FabricHeaders `
+        -Uri $apiEndpointUrl `
+        -Method Get `
+        -ErrorAction Stop `
+        -SkipHttpErrorCheck `
+        -ResponseHeadersVariable "responseHeader" `
+        -StatusCodeVariable "statusCode"
 
-$apiEndpointUrl= "https://api.fabric.microsoft.com/v1/workspaces/26cbd4ed-5920-4f2b-94ab-8e6ffbbdc48d/eventhouses"
-$bodyJson = '{
-  "description": "EH Events",
-  "displayName": "EH04"
-}'
-
-$response = Invoke-RestMethod `
--Headers $FabricConfig.FabricHeaders `
--Uri $apiEndpointUrl `
--Method Post `
--Body $bodyJson `
--ContentType "application/json" `
--ErrorAction Stop `
--SkipHttpErrorCheck `
--ResponseHeadersVariable "responseHeader" `
--StatusCodeVariable "statusCode"
-
-$response
+$a.value
 #################################################################
 # Capacity
-Get-FabricCapacity 
+Get-FabricCapacity -Debug 
 Get-FabricCapacity -capacityId "6b3297a9-84d0-4f51-99ac-76dda2572ba4"
 Get-FabricCapacity -capacityName "tiagocapacity"
 Add-FabricWorkspace -WorkspaceName "Tiago API"
@@ -86,12 +56,12 @@ Remove-FabricWorkspace -WorkspaceId $workspace.id
 $workspace = Get-FabricWorkspace -WorkspaceName "Tiago API3"
 ######Remove-FabricWorkspace -WorkspaceId $workspace.id 
 
-# Workspace Assing Capacity
+# Workspace Assign Capacity
 $capacity = Get-FabricCapacity -capacityName "tiagocapacity"
 $workspace = Get-FabricWorkspace -WorkspaceName "Tiago API"
 Assign-FabricWorkspaceCapacity -WorkspaceId $workspace.id -CapacityId $capacity.id
 
-# Workspace Unassing Capacity
+# Workspace Unassign Capacity
 $workspace = Get-FabricWorkspace -WorkspaceName "Tiago API"
 Unassign-FabricWorkspaceCapacity -WorkspaceId $workspace.id 
 
@@ -105,7 +75,7 @@ Remove-FabricWorkspaceIdentity -WorkspaceId $workspace.id
 
 # Get Workspace Role Assignments 
 $workspace = Get-FabricWorkspace -WorkspaceName "Tiago API"
-Get-FabricWorkspaceRoleAssignment -WorkspaceId $workspace.id
+Get-FabricWorkspaceRoleAssignment -WorkspaceId $workspace.id -Debug
 
 # Workspace Add Role Assignments - Principal Id must be EntraID
 $workspace = Get-FabricWorkspace -WorkspaceName "Tiago API"
@@ -128,9 +98,10 @@ $workspace = Get-FabricWorkspace -WorkspaceName "Tiago API"
 Add-FabricEnvironment -WorkspaceId $workspace.id -EnvironmentName "DevEnv01" -EnvironmentDescription "Development Environment"
 
 ## Get Environment 
-Get-FabricEnvironment -WorkspaceId $workspace.id
-Get-FabricEnvironment -WorkspaceId $workspace.id -EnvironmentName "DevEnv" 
-Get-FabricEnvironment -WorkspaceId $workspace.id -EnvironmentId "0c06e50a-141e-4ecc-970c-121c6e07521c"
+$workspace = Get-FabricWorkspace -WorkspaceName "Tiago API"
+Get-FabricEnvironment -WorkspaceId $workspace.id -Debug
+Get-FabricEnvironment -WorkspaceId $workspace.id -EnvironmentName "DevEnv01"  -Debug
+Get-FabricEnvironment -WorkspaceId $workspace.id -EnvironmentId "0c06e50a-141e-4ecc-970c-121c6e07521c" -Debug
 
 ## Update Environment
 $env = Get-FabricEnvironment -WorkspaceId $workspace.id -EnvironmentName "DevEnv" 
@@ -273,9 +244,9 @@ Add-FabricNotebook -WorkspaceId $workspace.id -NotebookName "Generate888" -Noteb
 
  ## Get Notebook
 $workspace = Get-FabricWorkspace -WorkspaceName "Tiago API"
-Get-FabricNotebook -WorkspaceId $workspace.id
-Get-FabricNotebook -WorkspaceId $workspace.id -NotebookName "Generate Data"
-Get-FabricNotebook -WorkspaceId $workspace.id -NotebookId "cbc46986-44a3-45f7-aac5-729885c50864"
+Get-FabricNotebook -WorkspaceId $workspace.id -Debug
+Get-FabricNotebook -WorkspaceId $workspace.id -NotebookName "Generate Data" -Debug
+Get-FabricNotebook -WorkspaceId $workspace.id -NotebookId "8a4d9a16-c972-4a0c-b905-e133a1c282fc" -Debug
 
 ## Get Notebook Definition
 $workspace = Get-FabricWorkspace -WorkspaceName "Tiago API"
@@ -317,9 +288,9 @@ Update-FabricNotebookDefinition -WorkspaceId $workspace.id -NotebookId $notebook
 
 ## Get Eventhouse
 $workspace = Get-FabricWorkspace -WorkspaceName "Tiago API"
-Get-FabricEventhouse -WorkspaceId $workspace.id
-Get-FabricEventhouse -WorkspaceId $workspace.id -EventhouseName "EH01"
-Get-FabricEventhouse -WorkspaceId $workspace.id -EventhouseId "66ba709c-6531-4658-b189-68c7639b1ad8"
+Get-FabricEventhouse -WorkspaceId $workspace.id -debug
+Get-FabricEventhouse -WorkspaceId $workspace.id -EventhouseName "EH01" -Debug
+Get-FabricEventhouse -WorkspaceId $workspace.id -EventhouseId "66ba709c-6531-4658-b189-68c7639b1ad8" -Debug
 
 ## Add Eventhouse
 $workspace = Get-FabricWorkspace -WorkspaceName "Tiago API"
@@ -339,3 +310,27 @@ Remove-FabricEventhouse -WorkspaceId $workspace.id -EventhouseId $eventhouse.id 
 $workspace = Get-FabricWorkspace -WorkspaceName "Tiago API"
 $eventhouse = Get-FabricEventhouse -WorkspaceId $workspace.id -EventhouseName "EH01"
 Get-FabricEventhouseDefinition -WorkspaceId $workspace.id -EventhouseId $eventhouse.id -Debug
+
+
+# Eventstream
+
+## Add Eventstream
+$workspace = Get-FabricWorkspace -WorkspaceName "Tiago API"
+Add-FabricEventstream -WorkspaceId $workspace.id -EventstreamName "ES01" -EventstreamDescription "ES Events" # -EventstreamPathDefinition "C:\temp\API\Generate Data.ipynb" -EventstreamPathPlatformDefinition "C:\temp\API\.platform" -Debug
+Add-FabricEventstream -WorkspaceId $workspace.id -EventstreamName "ES02" -EventstreamDescription "ES Events" # -EventstreamPathDefinition "C:\temp\API\Generate Data.ipynb" -EventstreamPathPlatformDefinition "C:\temp\API\.platform" -Debug
+
+## Get Eventstream
+$workspace = Get-FabricWorkspace -WorkspaceName "Tiago API"
+Get-FabricEventstream -WorkspaceId $workspace.id
+Get-FabricEventstream -WorkspaceId $workspace.id -EventstreamName "ES01"
+Get-FabricEventstream -WorkspaceId $workspace.id -EventstreamId "31f22ab2-9244-4fac-88ac-25a6cf3ec5a8"
+
+## Update Eventstream
+$workspace = Get-FabricWorkspace -WorkspaceName "Tiago API"
+$eventstream = Get-FabricEventstream -WorkspaceId $workspace.id -EventstreamName "ES02"
+Update-FabricEventstream -WorkspaceId $workspace.id -EventstreamId $eventstream.id -EventstreamName "ES02 Updated" -EventstreamDescription "ES Events Updated" -Debug
+
+## Remove Eventstream
+$workspace = Get-FabricWorkspace -WorkspaceName "Tiago API"
+$eventstream = Get-FabricEventstream -WorkspaceId $workspace.id -EventstreamName "ES02 Updated"
+Remove-FabricEventstream -WorkspaceId $workspace.id -EventstreamId $eventstream.id -Debug

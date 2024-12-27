@@ -1,52 +1,55 @@
 <#
 .SYNOPSIS
-Retrieves details of a Microsoft Fabric workspace by its ID or name.
+Retrieves a Fabric capacity by its ID, Display Name, or returns all capacities if no filter is provided.
 
 .DESCRIPTION
-The `Get-FabricWorkspace` function fetches workspace details from the Fabric API. It supports filtering by WorkspaceId or WorkspaceName.
+The `Get-FabricCapacity` function interacts with the Fabric API to retrieve capacity details. It can filter by `capacityId` or `capacityName`, or return all available capacities if no filter is specified.
 
-.PARAMETER WorkspaceId
-The unique identifier of the workspace to retrieve.
+.PARAMETER capacityId
+(Optional) The unique identifier of the Fabric capacity to retrieve.
 
-.PARAMETER WorkspaceName
-The display name of the workspace to retrieve.
-
-.EXAMPLE
-Get-FabricWorkspace -WorkspaceId "workspace123"
-
-Fetches details of the workspace with ID "workspace123".
+.PARAMETER capacityName
+(Optional) The display name of the Fabric capacity to retrieve.
 
 .EXAMPLE
-Get-FabricWorkspace -WorkspaceName "MyWorkspace"
+Get-FabricCapacity -capacityId "12345"
 
-Fetches details of the workspace with the name "MyWorkspace".
+Retrieve a Fabric capacity by its unique ID.
+
+.EXAMPLE
+Get-FabricCapacity -capacityName "MyCapacity"
+
+Retrieve a Fabric capacity by its display name.
+
+.EXAMPLE
+Get-FabricCapacity
+
+Retrieve all available capacities.
 
 .NOTES
-- Requires `$FabricConfig` global configuration, including `BaseUrl` and `FabricHeaders`.
-- Calls `Test-TokenExpired` to ensure token validity before making the API request.
-- Returns the matching workspace details or all workspaces if no filter is provided.
+- Requires the `$FabricConfig` global object, including `BaseUrl` and `FabricHeaders`.
+- Uses `Test-TokenExpired` to validate the token before making API calls.
 
 Author: Tiago Balabuch  
-Date: 2024-12-13
+Date: 2024-12-12
 #>
 
-function Get-FabricWorkspace {
+function Get-FabricCapacityContinuationToken {
     [CmdletBinding()]
     param (
         [Parameter(Mandatory = $false)]
         [ValidateNotNullOrEmpty()]
-        [string]$WorkspaceId,
+        [string]$capacityId,
 
         [Parameter(Mandatory = $false)]
         [ValidateNotNullOrEmpty()]
-        [ValidatePattern('^[a-zA-Z0-9_ ]*$')]
-        [string]$WorkspaceName
+        [string]$capacityName
     )
 
     try {
         # Step 1: Handle ambiguous input
-        if ($WorkspaceId -and $WorkspaceName) {
-            Write-Message -Message "Both 'WorkspaceId' and 'WorkspaceName' were provided. Please specify only one." -Level Error
+        if ($capacityId -and $capacityName) {
+            Write-Message -Message "Both 'capacityId' and 'capacityName' were provided. Please specify only one." -Level Error
             return $null
         }
 
@@ -56,12 +59,11 @@ function Get-FabricWorkspace {
         Write-Message -Message "Token validation completed." -Level Debug
 
         $continuationToken = $null
-        $workspaces = @()
+        $capacities = @()
 
-        $apiEndpointUrl = "{0}/workspaces" -f $FabricConfig.BaseUrl
-        # Write-Message -Message "API Endpoint: $apiEndpointUrl" -Level Debug
-        
-        # Step 3: Loop to retrieve data with continuation token
+        $apiEndpointUrl = "{0}/capacities" -f $FabricConfig.BaseUrl
+
+        # Step 3:  Loop to retrieve data with continuation token
         do {
             # Step 4: Construct the API URL
             $apiEndpointUrl = if ($null -ne $continuationToken) {
@@ -93,8 +95,8 @@ function Get-FabricWorkspace {
             # Step 7: Add data to the list
             if ($null -ne $response) {
                 Write-Message -Message "Adding data to the list" -Level Debug
-                $workspaces += $response.value
-                
+                $capacities += $response.value
+        
                 # Update the continuation token
                 Write-Message -Message "Updating the continuation token" -Level Debug
                 $continuationToken = $response.continuationToken
@@ -107,30 +109,32 @@ function Get-FabricWorkspace {
         } while ($null -ne $continuationToken)
 
         # Step 8: Filter results based on provided parameters
-        $workspace = if ($WorkspaceId) {
-            $workspaces | Where-Object { $_.Id -eq $WorkspaceId }
+        $capacity = if ($capacityId) {
+            $capacities | Where-Object { $_.Id -eq $capacityId }
         }
-        elseif ($WorkspaceName) {
-            $workspaces | Where-Object { $_.DisplayName -eq $WorkspaceName }
+        elseif ($capacityName) {
+            $capacities | Where-Object { $_.DisplayName -eq $capacityName }
         }
         else {
-            # Return all workspaces if no filter is provided
-            Write-Message -Message "No filter provided. Returning all workspaces." -Level Debug
-            $workspaces
+            # No filter, return all capacities
+            Write-Message -Message "No filter specified. Returning all capacities." -Level Debug
+            return $capacities
         }
-            
+
         # Step 9: Handle results
-        if ($workspace) {
-            return $workspace
+        if ($capacity) {
+            Write-Message -Message "Capacity found matching the specified criteria." -Level Debug
+            return $capacity
         }
         else {
-            Write-Message -Message "No workspace found matching the provided criteria." -Level Warning
+            Write-Message -Message "No capacity found matching the specified criteria." -Level Warning
             return $null
         }
     }
     catch {
         # Step 10: Capture and log error details
         $errorDetails = $_.Exception.Message
-        Write-Message -Message "Failed to retrieve workspace. Error: $errorDetails" -Level Error
+        Write-Message -Message "Failed to retrieve capacity. Error: $errorDetails" -Level Error
+        return $null
     }
 }

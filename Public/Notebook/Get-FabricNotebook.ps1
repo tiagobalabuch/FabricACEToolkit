@@ -58,49 +58,70 @@ function Get-FabricNotebook {
         Test-TokenExpired
         Write-Message -Message "Token validation completed." -Level Debug
 
-        # Step 3: Construct the API URL
+        $continuationToken = $null
+        $notebooks = @()
+        
         $apiEndpointUrl = "{0}/workspaces/{1}/notebooks" -f $FabricConfig.BaseUrl, $WorkspaceId
-        Write-Message -Message "API Endpoint: $apiEndpointUrl" -Level Debug
+        # Step 3:  Loop to retrieve data with continuation token
+        do {
+            # Step 4: Construct the API URL
+            $apiEndpointUrl = if ($null -ne $continuationToken) {
+                "{0}?continuationToken={1}" -f $apiEndpointUrl, $continuationToken
+            }
+            else {
+                $apiEndpointUrl
+            }
+            Write-Message -Message "API Endpoint: $apiEndpointUrl" -Level Debug
 
-        # Step 4: Make the API request
-        $response = Invoke-RestMethod `
-            -Headers $FabricConfig.FabricHeaders `
-            -Uri $apiEndpointUrl `
-            -Method Get `
-            -ErrorAction Stop `
-            -SkipHttpErrorCheck `
-            -StatusCodeVariable "statusCode"
+            # Step 5: Make the API request
+            $response = Invoke-RestMethod `
+                -Headers $FabricConfig.FabricHeaders `
+                -Uri $apiEndpointUrl `
+                -Method Get `
+                -ErrorAction Stop `
+                -SkipHttpErrorCheck `
+                -StatusCodeVariable "statusCode"
 
-        # Step 5: Validate the response code
-        if ($statusCode -ne 200) {
-            Write-Message -Message "Unexpected response code: $statusCode from the API." -Level Error
-            Write-Message -Message "Error: $($response.message)" -Level Error
-            Write-Message "Error Code: $($response.errorCode)" -Level Error
-            return $null
-        }
+            # Step 5: Validate the response code
+            if ($statusCode -ne 200) {
+                Write-Message -Message "Unexpected response code: $statusCode from the API." -Level Error
+                Write-Message -Message "Error: $($response.message)" -Level Error
+                Write-Message "Error Code: $($response.errorCode)" -Level Error
+                return $null
+            }
                     
-        # Step 6: Handle empty response
-        if (-not $response) {
-            Write-Message -Message "No data returned from the API." -Level Warning
-            return $null
-        }
+            # Step 7: Add data to the list
+            if ($null -ne $response) {
+                Write-Message -Message "Adding data to the list" -Level Debug
+                $notebooks += $response.value
+    
+                # Update the continuation token
+                Write-Message -Message "Updating the continuation token" -Level Debug
+                $continuationToken = $response.continuationToken
+                Write-Message -Message "Continuation token: $continuationToken" -Level Debug
+            }
+            else {
+                Write-Message -Message "No data received from the API." -Level Warning
+                break
+            }
+        } while ($null -ne $continuationToken)
        
         # Step 7: Filter results based on provided parameters
-        $Notebook = if ($NotebookId) {
-            $response.value | Where-Object { $_.Id -eq $NotebookId }
+        $notebook = if ($NotebookId) {
+            $notebooks | Where-Object { $_.Id -eq $NotebookId }
         }
         elseif ($NotebookName) {
-            $response.value | Where-Object { $_.DisplayName -eq $NotebookName }
+            $notebooks | Where-Object { $_.DisplayName -eq $NotebookName }
         }
         else {
             # Return all workspaces if no filter is provided
             Write-Message -Message "No filter provided. Returning all Notebooks." -Level Debug
-            $response.value
+            $notebooks
         }
 
         # Step 8: Handle results
-        if ($Notebook) {
-            return $Notebook
+        if ($notebook) {
+            return $notebook
         }
         else {
             Write-Message -Message "No notebook found matching the provided criteria." -Level Warning
