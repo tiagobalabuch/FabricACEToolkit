@@ -59,23 +59,31 @@ function Get-FabricEnvironment {
         Test-TokenExpired
         Write-Message -Message "Token validation completed." -Level Debug
 
+        # Step 3: Initialize variables
         $continuationToken = $null
         $environments = @()
 
-        $apiEndpointUrl = "{0}/workspaces/{1}/environments" -f $FabricConfig.BaseUrl, $WorkspaceId
+        if (-not ([AppDomain]::CurrentDomain.GetAssemblies() | Where-Object { $_.GetName().Name -eq "System.Web" })) {
+            Add-Type -AssemblyName System.Web
+        }
+
+        $baseApiEndpointUrl = "{0}/workspaces/{1}/environments" -f $FabricConfig.BaseUrl, $WorkspaceId
         
-        # Step 3:  Loop to retrieve data with continuation token
+        # Step 4:  Loop to retrieve data with continuation token
+        Write-Message -Message "Loop started to get continuation token" -Level Debug
+
         do {
-            # Step 4: Construct the API URL
-            $apiEndpointUrl = if ($null -ne $continuationToken) {
-                "{0}?continuationToken={1}" -f $apiEndpointUrl, $continuationToken
-            }
-            else {
-                $apiEndpointUrl
+            # Step 5: Construct the API URL
+            $apiEndpointUrl = $baseApiEndpointUrl
+ 
+            if ($null -ne $continuationToken) {
+                # URL-encode the continuation token
+                $encodedToken = [System.Web.HttpUtility]::UrlEncode($continuationToken)
+                $apiEndpointUrl = "{0}?continuationToken={1}" -f $apiEndpointUrl, $encodedToken
             }
             Write-Message -Message "API Endpoint: $apiEndpointUrl" -Level Debug
 
-            # Step 5: Make the API request
+            # Step 6: Make the API request
             $response = Invoke-RestMethod `
                 -Headers $FabricConfig.FabricHeaders `
                 -Uri $apiEndpointUrl `
@@ -85,29 +93,37 @@ function Get-FabricEnvironment {
                 -ResponseHeadersVariable "responseHeader" `
                 -StatusCodeVariable "statusCode"
 
-            # Step 6: Validate the response code
+            # Step 7: Validate the response code
             if ($statusCode -ne 200) {
                 Write-Message -Message "Unexpected response code: $statusCode from the API." -Level Error
                 Write-Message -Message "Error: $($response.message)" -Level Error
+                Write-Message -Message "Error Details: $($response.moreDetails)" -Level Error
                 Write-Message "Error Code: $($response.errorCode)" -Level Error
                 return $null
             }
-
-            # Step 7: Add data to the list
+ 
+            # Step 8: Add data to the list
             if ($null -ne $response) {
                 Write-Message -Message "Adding data to the list" -Level Debug
                 $environments += $response.value
 
-                # Update the continuation token
-                Write-Message -Message "Updating the continuation token" -Level Debug
-                $continuationToken = $response.continuationToken
-                Write-Message -Message "Continuation token: $continuationToken" -Level Debug
+                # Update the continuation token if present
+                if ($response.PSObject.Properties.Match("continuationToken")) {
+                    Write-Message -Message "Updating the continuation token" -Level Debug
+                    $continuationToken = $response.continuationToken
+                    Write-Message -Message "Continuation token: $continuationToken" -Level Debug
+                }
+                else {
+                    Write-Message -Message "Updating the continuation token to null" -Level Debug
+                    $continuationToken = $null
+                }
             }
             else {
                 Write-Message -Message "No data received from the API." -Level Warning
                 break
             }
         } while ($null -ne $continuationToken)
+        Write-Message -Message "Loop finished and all data added to the list" -Level Debug
        
         # Step 8: Filter results based on provided parameters
         $environment = if ($EnvironmentId) {
@@ -124,6 +140,7 @@ function Get-FabricEnvironment {
 
         # Step 9: Handle results
         if ($environment) {
+            Write-Message -Message "Environment found in the Workspace '$WorkspaceId'." -Level Debug
             return $environment
         }
         else {

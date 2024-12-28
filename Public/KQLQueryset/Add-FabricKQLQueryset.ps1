@@ -1,29 +1,29 @@
 <#
 .SYNOPSIS
-Creates a new KQLDashboard in a specified Microsoft Fabric workspace.
+Creates a new KQLQueryset in a specified Microsoft Fabric workspace.
 
 .DESCRIPTION
-This function sends a POST request to the Microsoft Fabric API to create a new KQLDashboard 
-in the specified workspace. It supports optional parameters for KQLDashboard description 
-and path definitions for the KQLDashboard content.
+This function sends a POST request to the Microsoft Fabric API to create a new KQLQueryset 
+in the specified workspace. It supports optional parameters for KQLQueryset description 
+and path definitions for the KQLQueryset content.
 
 .PARAMETER WorkspaceId
-The unique identifier of the workspace where the KQLDashboard will be created.
+The unique identifier of the workspace where the KQLQueryset will be created.
 
-.PARAMETER KQLDashboardName
-The name of the KQLDashboard to be created.
+.PARAMETER KQLQuerysetName
+The name of the KQLQueryset to be created.
 
-.PARAMETER KQLDashboardDescription
-An optional description for the KQLDashboard.
+.PARAMETER KQLQuerysetDescription
+An optional description for the KQLQueryset.
 
-.PARAMETER KQLDashboardPathDefinition
-An optional path to the KQLDashboard definition file (e.g., .ipynb file) to upload.
+.PARAMETER KQLQuerysetPathDefinition
+An optional path to the KQLQueryset definition file (e.g., .ipynb file) to upload.
 
-.PARAMETER KQLDashboardPathPlatformDefinition
+.PARAMETER KQLQuerysetPathPlatformDefinition
 An optional path to the platform-specific definition (e.g., .platform file) to upload.
 
 .EXAMPLE
- Add-FabricKQLDashboard -WorkspaceId "workspace-12345" -KQLDashboardName "New KQLDashboard" -KQLDashboardPathDefinition "C:\KQLDashboards\example.ipynb"
+ Add-FabricKQLQueryset -WorkspaceId "workspace-12345" -KQLQuerysetName "New KQLQueryset" -KQLQuerysetPathDefinition "C:\KQLQuerysets\example.ipynb"
 
  .NOTES
 - Requires `$FabricConfig` global configuration, including `BaseUrl` and `FabricHeaders`.
@@ -33,7 +33,7 @@ Author: Tiago Balabuch
 Date: 2024-12-14
 #>
 
-function Add-FabricKQLDashboard {
+function Add-FabricKQLQueryset {
     [CmdletBinding()]
     param (
         [Parameter(Mandatory = $true)]
@@ -43,19 +43,19 @@ function Add-FabricKQLDashboard {
         [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
         [ValidatePattern('^[a-zA-Z0-9_ ]*$')]
-        [string]$KQLDashboardName,
+        [string]$KQLQuerysetName,
 
         [Parameter(Mandatory = $false)]
         [ValidateNotNullOrEmpty()]
-        [string]$KQLDashboardDescription,
+        [string]$KQLQuerysetDescription,
 
         [Parameter(Mandatory = $false)]
         [ValidateNotNullOrEmpty()]
-        [string]$KQLDashboardPathDefinition,
+        [string]$KQLQuerysetPathDefinition,
         
         [Parameter(Mandatory = $false)]
         [ValidateNotNullOrEmpty()]
-        [string]$KQLDashboardPathPlatformDefinition
+        [string]$KQLQuerysetPathPlatformDefinition
     )
 
     try {
@@ -65,47 +65,47 @@ function Add-FabricKQLDashboard {
         Write-Message -Message "Token validation completed." -Level Debug
 
         # Step 2: Construct the API URL
-        $apiEndpointUrl = "{0}/workspaces/{1}/kqlDashboards" -f $FabricConfig.BaseUrl, $WorkspaceId
+        $apiEndpointUrl = "{0}/workspaces/{1}/kqlQuerysets" -f $FabricConfig.BaseUrl, $WorkspaceId
         Write-Message -Message "API Endpoint: $apiEndpointUrl" -Level Debug
 
         # Step 3: Construct the request body
         $body = @{
-            displayName = $KQLDashboardName
+            displayName = $KQLQuerysetName
         }
 
-        if ($KQLDashboardDescription) {
-            $body.description = $KQLDashboardDescription
+        if ($KQLQuerysetDescription) {
+            $body.description = $KQLQuerysetDescription
         }
 
-        if ($KQLDashboardPathDefinition) {
-            $KQLDashboardEncodedContent = Encode-ToBase64 -filePath $KQLDashboardPathDefinition
+        if ($KQLQuerysetPathDefinition) {
+            $KQLQuerysetEncodedContent = Encode-ToBase64 -filePath $KQLQuerysetPathDefinition
 
-            if (-not [string]::IsNullOrEmpty($KQLDashboardEncodedContent)) {
+            if (-not [string]::IsNullOrEmpty($KQLQuerysetEncodedContent)) {
                 # Initialize definition if it doesn't exist
                 if (-not $body.definition) {
                     $body.definition = @{
-                        format = "KQLDashboard"
+                        format = $null
                         parts  = @()
                     }
                 }
 
                 # Add new part to the parts array
                 $body.definition.parts += @{
-                    path        = "RealTimeDashboard.json"
-                    payload     = $KQLDashboardEncodedContent
+                    path        = "RealTimeQueryset.json"
+                    payload     = $KQLQuerysetEncodedContent
                     payloadType = "InlineBase64"
                 }
             }
             else {
-                Write-Message -Message "Invalid or empty content in KQLDashboard definition." -Level Error
+                Write-Message -Message "Invalid or empty content in KQLQueryset definition." -Level Error
                 return $null
             }
         }
 
-        if ($KQLDashboardPathPlatformDefinition) {
-            $KQLDashboardEncodedPlatformContent = Encode-ToBase64 -filePath $KQLDashboardPathPlatformDefinition
+        if ($KQLQuerysetPathPlatformDefinition) {
+            $KQLQuerysetEncodedPlatformContent = Encode-ToBase64 -filePath $KQLQuerysetPathPlatformDefinition
 
-            if (-not [string]::IsNullOrEmpty($KQLDashboardEncodedPlatformContent)) {
+            if (-not [string]::IsNullOrEmpty($KQLQuerysetEncodedPlatformContent)) {
                 # Initialize definition if it doesn't exist
                 if (-not $body.definition) {
                     $body.definition = @{
@@ -117,7 +117,7 @@ function Add-FabricKQLDashboard {
                 # Add new part to the parts array
                 $body.definition.parts += @{
                     path        = ".platform"
-                    payload     = $KQLDashboardEncodedPlatformContent
+                    payload     = $KQLQuerysetEncodedPlatformContent
                     payloadType = "InlineBase64"
                 }
             }
@@ -145,11 +145,11 @@ function Add-FabricKQLDashboard {
         # Step 5: Handle and log the response
         switch ($statusCode) {
             201 {
-                Write-Message -Message "KQLDashboard '$KQLDashboardName' created successfully!" -Level Info
+                Write-Message -Message "KQLQueryset '$KQLQuerysetName' created successfully!" -Level Info
                 return $response
             }
             202 {
-                Write-Message -Message "KQLDashboard '$KQLDashboardName' creation accepted. Provisioning in progress!" -Level Info
+                Write-Message -Message "KQLQueryset '$KQLQuerysetName' creation accepted. Provisioning in progress!" -Level Info
                
                 [string]$operationId = $responseHeader["x-ms-operation-id"]
                 Write-Message -Message "Operation ID: '$operationId'" -Level Debug
@@ -182,6 +182,6 @@ function Add-FabricKQLDashboard {
     catch {
         # Step 6: Handle and log errors
         $errorDetails = $_.Exception.Message
-        Write-Message -Message "Failed to create KQLDashboard. Error: $errorDetails" -Level Error
+        Write-Message -Message "Failed to create KQLQueryset. Error: $errorDetails" -Level Error
     }
 }

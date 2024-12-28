@@ -1,35 +1,65 @@
 <#
 .SYNOPSIS
-Retrieves capacities tenant settings overrides from the Fabric tenant.
+Retrieves an Lakehouse or a list of Lakehouses from a specified workspace in Microsoft Fabric.
 
 .DESCRIPTION
-The `Get-FabricTenantSetting` function retrieves capacities tenant settings overrides for a Fabric tenant by making a GET request to the appropriate API endpoint. 
+The `Get-FabricLakehouse` function sends a GET request to the Fabric API to retrieve Lakehouse details for a given workspace. It can filter the results by `LakehouseName`.
+
+.PARAMETER WorkspaceId
+(Mandatory) The ID of the workspace to query Lakehouses.
+
+.PARAMETER LakehouseName
+(Optional) The name of the specific Lakehouse to retrieve.
 
 .EXAMPLE
-Get-FabricTenantSettingOverridesCapacity
+Get-FabricLakehouse -WorkspaceId "12345" -LakehouseName "Development"
 
-Returns all capacities tenant settings overrides.
+Retrieves the "Development" Lakehouse from workspace "12345".
+
+.EXAMPLE
+Get-FabricLakehouse -WorkspaceId "12345"
+
+Retrieves all Lakehouses in workspace "12345".
 
 .NOTES
 - Requires `$FabricConfig` global configuration, including `BaseUrl` and `FabricHeaders`.
-- Calls `Is-TokenExpired` to ensure token validity before making the API request.
+- Calls `Test-TokenExpired` to ensure token validity before making the API request.
 
 Author: Tiago Balabuch  
 Date: 2024-12-15
 #>
 
-function Get-FabricTenantSettingOverridesCapacity {
+function Get-FabricLakehouse {
     [CmdletBinding()]
-    param ()
+    param (
+        [Parameter(Mandatory = $true)]
+        [ValidateNotNullOrEmpty()]
+        [string]$WorkspaceId,
+
+        [Parameter(Mandatory = $false)]
+        [ValidateNotNullOrEmpty()]
+        [string]$LakehouseId,
+
+        [Parameter(Mandatory = $false)]
+        [ValidateNotNullOrEmpty()]
+        [ValidatePattern('^[a-zA-Z0-9_ ]*$')]
+        [string]$LakehouseName
+    )
+
     try {
-        # Step 1: Ensure token validity
+        # Step 1: Handle ambiguous input
+        if ($LakehouseId -and $LakehouseName) {
+            Write-Message -Message "Both 'LakehouseId' and 'LakehouseName' were provided. Please specify only one." -Level Error
+            return $null
+        }
+
+        # Step 2: Ensure token validity
         Write-Message -Message "Validating token..." -Level Debug
         Test-TokenExpired
         Write-Message -Message "Token validation completed." -Level Debug
-
         # Step 3: Initialize variables
         $continuationToken = $null
-        $capacitiesOverrides = @()
+        $lakehouses = @()
 
         if (-not ([AppDomain]::CurrentDomain.GetAssemblies() | Where-Object { $_.GetName().Name -eq "System.Web" })) {
             Add-Type -AssemblyName System.Web
@@ -37,8 +67,8 @@ function Get-FabricTenantSettingOverridesCapacity {
  
         # Step 4: Loop to retrieve all capacities with continuation token
         Write-Message -Message "Loop started to get continuation token" -Level Debug
-        $baseApiEndpointUrl = "{0}/admin/capacities/delegatedTenantSettingOverrides" -f $FabricConfig.BaseUrl
-        
+        $baseApiEndpointUrl = "{0}/workspaces/{1}/lakehouses" -f $FabricConfig.BaseUrl, $WorkspaceId
+
         do {
             # Step 5: Construct the API URL
             $apiEndpointUrl = $baseApiEndpointUrl
@@ -72,7 +102,7 @@ function Get-FabricTenantSettingOverridesCapacity {
             # Step 8: Add data to the list
             if ($null -ne $response) {
                 Write-Message -Message "Adding data to the list" -Level Debug
-                $capacitiesOverrides += $response.value
+                $lakehouses += $response.value
                  
                 # Update the continuation token if present
                 if ($response.PSObject.Properties.Match("continuationToken")) {
@@ -91,19 +121,34 @@ function Get-FabricTenantSettingOverridesCapacity {
             }
         } while ($null -ne $continuationToken)
         Write-Message -Message "Loop finished and all data added to the list" -Level Debug
-        # Step 7: Handle results
-        if ($capacitiesOverrides) {
-            Write-Message -Message "Capacities overrides found." -Level Debug
-            return $capacitiesOverrides
+       
+        # Step 8: Filter results based on provided parameters
+        $lakehouse = if ($LakehouseId) {
+            $lakehouses | Where-Object { $_.Id -eq $LakehouseId }
+        }
+        elseif ($LakehouseName) {
+            $lakehouses | Where-Object { $_.DisplayName -eq $LakehouseName }
         }
         else {
-            Write-Message -Message "No capacity capacities tenant settings overrides overrides found matching the provided criteria." -Level Warning
+            # Return all lakehouses if no filter is provided
+            Write-Message -Message "No filter provided. Returning all Lakehouses." -Level Debug
+            $lakehouses
+        }
+
+        # Step 9: Handle results
+        if ($Lakehouse) {
+            Write-Message -Message "Lakehouse found matching the specified criteria." -Level Debug
+            return $Lakehouse
+        }
+        else {
+            Write-Message -Message "No Lakehouse found matching the provided criteria." -Level Warning
             return $null
         }
     }
     catch {
-        # Step 8: Capture and log error details
+        # Step 10: Capture and log error details
         $errorDetails = $_.Exception.Message
-        Write-Message -Message "Failed to retrieve capacities tenant settings overrides. Error: $errorDetails" -Level Error
-    }
+        Write-Message -Message "Failed to retrieve Lakehouse. Error: $errorDetails" -Level Error
+    } 
+ 
 }

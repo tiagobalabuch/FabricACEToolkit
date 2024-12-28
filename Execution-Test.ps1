@@ -9,21 +9,52 @@ $a = Get-Command -Module FabricACEToolkit
 $a.Count
 
 
+#Lakehouse
+## Add Lakehouse
+$workspace = Get-FabricWorkspace -WorkspaceName "Tiago API"
+Add-FabricLakehouse -WorkspaceId $workspace.id -LakehouseName "LH01" -LakehouseDescription "LH Data" -Debug
+Add-FabricLakehouse -WorkspaceId $workspace.id -LakehouseName "LH02" -LakehouseDescription "LH Data" -LakehouseEnableSchemas $true -Debug
+Add-FabricLakehouse -WorkspaceId $workspace.id -LakehouseName "LH03" -LakehouseDescription "LH Data" -Debug
 
+## Get Lakehouse
+$workspace = Get-FabricWorkspace -WorkspaceName "Tiago API"
+Get-FabricLakehouse -WorkspaceId $workspace.id -Debug
+Get-FabricLakehouse -WorkspaceId $workspace.id -LakehouseName "LH01" -Debug
+Get-FabricLakehouse -WorkspaceId $workspace.id -LakehouseId "92b0be44-17ec-462f-bd84-41eaaad91edf" -Debug
 
+## Update Lakehouse
+$workspace = Get-FabricWorkspace -WorkspaceName "Tiago API"
+$lakehouse = Get-FabricLakehouse -WorkspaceId $workspace.id -LakehouseName "LH03"
+Update-FabricLakehouse -WorkspaceId $workspace.id -LakehouseId $lakehouse.id -LakehouseName "LH03Updated" -LakehouseDescription "LH Data Updated" -Debug
 
+## remove Lakehouse
+$workspace = Get-FabricWorkspace -WorkspaceName "Tiago API"
+$lakehouse = Get-FabricLakehouse -WorkspaceId $workspace.id -LakehouseName "LH03Updated"
+Remove-FabricLakehouse -WorkspaceId $workspace.id -LakehouseId $lakehouse.id -Debug
 
-$apiEndpointUrl= "https://api.fabric.microsoft.com/v1/capacities"
-$a = Invoke-RestMethod `
-        -Headers $FabricConfig.FabricHeaders `
-        -Uri $apiEndpointUrl `
-        -Method Get `
-        -ErrorAction Stop `
-        -SkipHttpErrorCheck `
-        -ResponseHeadersVariable "responseHeader" `
-        -StatusCodeVariable "statusCode"
+## List Lakehouse tables
+$workspace = Get-FabricWorkspace -WorkspaceName "Tiago API"
+$lakehouse = Get-FabricLakehouse -WorkspaceId $workspace.id -LakehouseName "LH01"
+Get-FabricLakehouseTable -WorkspaceId $workspace.id -LakehouseId $lakehouse.id -Debug
 
-$a.value
+$bodyJson = '{
+  "displayName": "LH03 Updated",
+  "description": "LH Data Updated"
+}'
+
+$apiEndpointUrl= "https://api.fabric.microsoft.com/v1/workspaces/26cbd4ed-5920-4f2b-94ab-8e6ffbbdc48d/lakehouses/164b0c0a-baf9-45c4-bedd-be852cdbcf8b"
+
+$response = Invoke-RestMethod `
+-Headers $FabricConfig.FabricHeaders `
+-Uri $apiEndpointUrl `
+-Method Patch `
+-Body $bodyJson `
+-ContentType "application/json" `
+-ErrorAction Stop `
+-SkipHttpErrorCheck `
+-StatusCodeVariable "statusCode"
+
+$response
 #################################################################
 # Capacity
 Get-FabricCapacity -Debug 
