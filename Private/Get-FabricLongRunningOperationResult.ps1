@@ -42,10 +42,8 @@ function Get-FabricLongRunningOperationResult {
             -ResponseHeadersVariable responseHeader `
             -StatusCodeVariable statusCode
         # Step 3: Return the result
-        #return $resultResponse.definition.parts
         Write-Message -Message "Result return: $response" -Level Debug
 
-        # Return the operation result
         return $response
     }
     catch {

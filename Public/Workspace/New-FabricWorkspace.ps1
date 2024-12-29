@@ -1,47 +1,41 @@
 <#
 .SYNOPSIS
-Creates a new Fabric domain.
+Creates a new Fabric workspace with the specified display name.
 
 .DESCRIPTION
-The `Add-FabricDomain` function creates a new domain in Microsoft Fabric by making a POST request to the relevant API endpoint.
+The `Add-FabricWorkspace` function creates a new workspace in the Fabric platform by sending a POST request to the API. It validates the display name and handles both success and error responses.
 
-.PARAMETER DomainName
-The name of the domain to be created. Must only contain alphanumeric characters, underscores, and spaces.
-
-.PARAMETER DomainDescription
-A description of the domain to be created.
-
-.PARAMETER ParentDomainId
-(Optional) The ID of the parent domain, if applicable.
+.PARAMETER WorkspaceName
+The display name of the workspace to be created. Must only contain alphanumeric characters, spaces, and underscores.
 
 .EXAMPLE
-Add-FabricDomain -DomainName "Finance" -DomainDescription "Finance data domain" -ParentDomainId "12345"
+Add-FabricWorkspace -WorkspaceName "NewWorkspace"
 
-Creates a "Finance" domain under the parent domain with ID "12345".
+Creates a workspace named "NewWorkspace".
 
 .NOTES
 - Requires `$FabricConfig` global configuration, including `BaseUrl` and `FabricHeaders`.
 - Calls `Test-TokenExpired` to ensure token validity before making the API request.
 
-Author: Tiago Balabuch  
-Date: 2024-12-14
+Author: Tiago Balabuch
+Date: 2024-12-12
 #>
 
-function Add-FabricDomain {
+function New-FabricWorkspace {
     [CmdletBinding()]
     param (
         [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
         [ValidatePattern('^[a-zA-Z0-9_ ]*$')]
-        [string]$DomainName,
+        [string]$WorkspaceName,
 
         [Parameter(Mandatory = $false)]
         [ValidateNotNullOrEmpty()]
-        [string]$DomainDescription,
+        [string]$WorkspaceDescription,
 
         [Parameter(Mandatory = $false)]
         [ValidateNotNullOrEmpty()]
-        [string]$ParentDomainId
+        [string]$CapacityId
     )
 
     try {
@@ -50,21 +44,21 @@ function Add-FabricDomain {
         Test-TokenExpired
         Write-Message -Message "Token validation completed." -Level Debug
 
-        # Step 3: Construct the request body
-        $apiEndpointUrl = "{0}/admin/domains" -f $FabricConfig.BaseUrl
+        # Step 2: Construct the API URL
+        $apiEndpointUrl = "{0}/workspaces" -f $FabricConfig.BaseUrl
         Write-Message -Message "API Endpoint: $apiEndpointUrl" -Level Debug
 
-        # Construct the request body
+        # Step 3: Construct the request body
         $body = @{
-            displayName = $DomainName
+            displayName = $WorkspaceName
         }
 
-        if ($DomainDescription) {
-            $body.description = $DomainDescription
+        if ($WorkspaceDescription) {
+            $body.description = $WorkspaceDescription
         }
 
-        if ($ParentDomainId) {
-            $body.parentDomainId = $ParentDomainId
+        if ($CapacityId) {
+            $body.capacityId = $CapacityId
         }
 
         # Convert the body to JSON
@@ -82,15 +76,15 @@ function Add-FabricDomain {
             -SkipHttpErrorCheck `
             -ResponseHeadersVariable "responseHeader" `
             -StatusCodeVariable "statusCode"
-        
+
         # Step 5: Handle and log the response
         switch ($statusCode) {
             201 {
-                Write-Message -Message "Domain '$DomainName' created successfully!" -Level Info
+                Write-Message -Message "Workspace '$WorkspaceName' created successfully!" -Level Info
                 return $response
             }
             202 {
-                Write-Message -Message "Domain '$DomainName' creation accepted. Provisioning in progress!" -Level Info
+                Write-Message -Message "Workspace '$WorkspaceName' creation accepted. Provisioning in progress!" -Level Info
                 [string]$operationId = $responseHeader["x-ms-operation-id"]
                 Write-Message -Message "Operation ID: '$operationId'" -Level Debug
                 Write-Message -Message "Getting Long Running Operation status" -Level Debug
@@ -107,6 +101,10 @@ function Add-FabricDomain {
                 
                     return $operationResult
                 }
+                else {
+                    Write-Message -Message "Operation Failed" -Level Debug
+                    return $operationStatus
+                }  
             }
             default {
                 Write-Message -Message "Unexpected response code: $statusCode" -Level Error
@@ -118,6 +116,7 @@ function Add-FabricDomain {
     catch {
         # Step 6: Handle and log errors
         $errorDetails = $_.Exception.Message
-        Write-Message -Message "Failed to create domain. Error: $errorDetails" -Level Error
+        Write-Message -Message "Failed to create workspace. Error: $errorDetails" -Level Error
+        
     }
 }

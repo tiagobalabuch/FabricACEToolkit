@@ -33,7 +33,7 @@ Author: Tiago Balabuch
 Date: 2024-12-14
 #>
 
-function Add-FabricNotebook {
+function New-FabricNotebook {
     [CmdletBinding()]
     param (
         [Parameter(Mandatory = $true)]

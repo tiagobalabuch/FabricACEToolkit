@@ -24,22 +24,40 @@ This command polls the status of the operation with the given operationId every 
 Tiago Balabuch
 
 #>
-function Get-FabricLongRunningOperation {
+function Get-FabricLongRunningOperation { 
     param (
-        [Parameter(Mandatory = $true)]
+        [Parameter(Mandatory = $false)]
         [string]$operationId,
+       
+        [Parameter(Mandatory = $false)]
+        [string]$location,
 
         [Parameter(Mandatory = $false)]
         [int]$retryAfter = 5
     )
 
     # Step 1: Construct the API URL
-    $apiEndpointUrl = "https://api.fabric.microsoft.com/v1/operations/{0}" -f $operationId
+    if ($location) {
+        # Use the Location header to define the operationUrl
+        $apiEndpointUrl = $location
+    }
+    else {
+        $apiEndpointUrl = "https://api.fabric.microsoft.com/v1/operations/{0}" -f $operationId
+    }
     Write-Message -Message "API Endpoint: $apiEndpointUrl" -Level Debug
     
     try {
         do {
-            # Step 2: Make the API request
+
+            # Step 2: Wait before the next request
+            if ($retryAfter) {
+                Start-Sleep -Seconds $retryAfter
+            }
+            else {
+                Start-Sleep -Seconds 5  # Default retry interval if no Retry-After header
+            }
+
+            # Step 3: Make the API request
             $response = Invoke-RestMethod `
                 -Headers $FabricConfig.FabricHeaders `
                 -Uri $apiEndpointUrl `
@@ -52,16 +70,11 @@ function Get-FabricLongRunningOperation {
             $jsonOperation = $response | ConvertTo-Json
             $operation = $jsonOperation | ConvertFrom-Json
 
-            #$operation = $response | ConvertFrom-Json
-
             # Log status for debugging
             Write-Message -Message "Operation Status: $($operation.status)" -Level Debug
 
-            # Step 4: Wait before the next request
-            if ($operation.status -notin @("Succeeded", "Failed")) {
-                Start-Sleep -Seconds $retryAfter
-            }
-        } while ($operation.status -notin @("Succeeded", "Failed"))
+  
+        } while ($operation.status -notin @("Succeeded", "Completed", "Failed"))
 
         # Step 5: Return the operation result
         return $operation

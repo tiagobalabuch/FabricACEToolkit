@@ -1,28 +1,25 @@
 <#
 .SYNOPSIS
-Creates a new Lakehouse in a specified Microsoft Fabric workspace.
+Creates a new Fabric domain.
 
 .DESCRIPTION
-This function sends a POST request to the Microsoft Fabric API to create a new Lakehouse 
-in the specified workspace. It supports optional parameters for Lakehouse description 
-and path definitions for the Lakehouse content.
+The `Add-FabricDomain` function creates a new domain in Microsoft Fabric by making a POST request to the relevant API endpoint.
 
-.PARAMETER WorkspaceId
-The unique identifier of the workspace where the Lakehouse will be created.
+.PARAMETER DomainName
+The name of the domain to be created. Must only contain alphanumeric characters, underscores, and spaces.
 
-.PARAMETER LakehouseName
-The name of the Lakehouse to be created.
+.PARAMETER DomainDescription
+A description of the domain to be created.
 
-.PARAMETER LakehouseDescription
-An optional description for the Lakehouse.
-
-.PARAMETER LakehouseEnableSchemas
-An optional path to enable schemas in the Lakehouse 
+.PARAMETER ParentDomainId
+(Optional) The ID of the parent domain, if applicable.
 
 .EXAMPLE
- Add-FabricLakehouse -WorkspaceId "workspace-12345" -LakehouseName "New Lakehouse" -LakehouseEnableSchemas $true
+Add-FabricDomain -DomainName "Finance" -DomainDescription "Finance data domain" -ParentDomainId "12345"
 
- .NOTES
+Creates a "Finance" domain under the parent domain with ID "12345".
+
+.NOTES
 - Requires `$FabricConfig` global configuration, including `BaseUrl` and `FabricHeaders`.
 - Calls `Test-TokenExpired` to ensure token validity before making the API request.
 
@@ -30,25 +27,21 @@ Author: Tiago Balabuch
 Date: 2024-12-14
 #>
 
-function Add-FabricLakehouse {
+function New-FabricDomain {
     [CmdletBinding()]
     param (
         [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
-        [string]$WorkspaceId,
-
-        [Parameter(Mandatory = $true)]
-        [ValidateNotNullOrEmpty()]
-        [ValidatePattern('^[a-zA-Z0-9_]*$')]
-        [string]$LakehouseName,
+        [ValidatePattern('^[a-zA-Z0-9_ ]*$')]
+        [string]$DomainName,
 
         [Parameter(Mandatory = $false)]
         [ValidateNotNullOrEmpty()]
-        [string]$LakehouseDescription,
+        [string]$DomainDescription,
 
         [Parameter(Mandatory = $false)]
         [ValidateNotNullOrEmpty()]
-        [bool]$LakehouseEnableSchemas = $false
+        [string]$ParentDomainId
     )
 
     try {
@@ -57,25 +50,25 @@ function Add-FabricLakehouse {
         Test-TokenExpired
         Write-Message -Message "Token validation completed." -Level Debug
 
-        # Step 2: Construct the API URL
-        $apiEndpointUrl = "{0}/workspaces/{1}/lakehouses" -f $FabricConfig.BaseUrl, $WorkspaceId
+        # Step 3: Construct the request body
+        $apiEndpointUrl = "{0}/admin/domains" -f $FabricConfig.BaseUrl
         Write-Message -Message "API Endpoint: $apiEndpointUrl" -Level Debug
 
-        # Step 3: Construct the request body
+        # Construct the request body
         $body = @{
-            displayName     = $LakehouseName
-            }
-
-        if ($LakehouseDescription) {
-            $body.description = $LakehouseDescription
+            displayName = $DomainName
         }
 
-        if ($true -eq $LakehouseEnableSchemas) {
-            $body.creationPayload = @{
-                enableSchemas = $LakehouseEnableSchemas
-            }
+        if ($DomainDescription) {
+            $body.description = $DomainDescription
         }
-        $bodyJson = $body | ConvertTo-Json -Depth 10
+
+        if ($ParentDomainId) {
+            $body.parentDomainId = $ParentDomainId
+        }
+
+        # Convert the body to JSON
+        $bodyJson = $body | ConvertTo-Json -Depth 2
         Write-Message -Message "Request Body: $bodyJson" -Level Debug
 
         # Step 4: Make the API request
@@ -89,16 +82,15 @@ function Add-FabricLakehouse {
             -SkipHttpErrorCheck `
             -ResponseHeadersVariable "responseHeader" `
             -StatusCodeVariable "statusCode"
-
+        
         # Step 5: Handle and log the response
         switch ($statusCode) {
             201 {
-                Write-Message -Message "Lakehouse '$LakehouseName' created successfully!" -Level Info
+                Write-Message -Message "Domain '$DomainName' created successfully!" -Level Info
                 return $response
             }
             202 {
-                Write-Message -Message "Lakehouse '$LakehouseName' creation accepted. Provisioning in progress!" -Level Info
-               
+                Write-Message -Message "Domain '$DomainName' creation accepted. Provisioning in progress!" -Level Info
                 [string]$operationId = $responseHeader["x-ms-operation-id"]
                 Write-Message -Message "Operation ID: '$operationId'" -Level Debug
                 Write-Message -Message "Getting Long Running Operation status" -Level Debug
@@ -115,10 +107,6 @@ function Add-FabricLakehouse {
                 
                     return $operationResult
                 }
-                else {
-                    Write-Message -Message "Operation Failed" -Level Debug
-                    return $operationStatus
-                }   
             }
             default {
                 Write-Message -Message "Unexpected response code: $statusCode" -Level Error
@@ -130,6 +118,6 @@ function Add-FabricLakehouse {
     catch {
         # Step 6: Handle and log errors
         $errorDetails = $_.Exception.Message
-        Write-Message -Message "Failed to create Lakehouse. Error: $errorDetails" -Level Error
+        Write-Message -Message "Failed to create domain. Error: $errorDetails" -Level Error
     }
 }

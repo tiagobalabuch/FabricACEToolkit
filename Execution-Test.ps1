@@ -8,125 +8,217 @@ Set-FabricHeaders -tenantId "2ca1a04f-621b-4a1f-bad6-7ecd3ae78e25"
 $a = Get-Command -Module FabricACEToolkit 
 $a.Count
 
-
-#Lakehouse
-## Add Lakehouse
+# KQL Database
+## Get KQL Database
 $workspace = Get-FabricWorkspace -WorkspaceName "Tiago API"
-Add-FabricLakehouse -WorkspaceId $workspace.id -LakehouseName "LH01" -LakehouseDescription "LH Data" -Debug
-Add-FabricLakehouse -WorkspaceId $workspace.id -LakehouseName "LH02" -LakehouseDescription "LH Data" -LakehouseEnableSchemas $true -Debug
-Add-FabricLakehouse -WorkspaceId $workspace.id -LakehouseName "LH03" -LakehouseDescription "LH Data" -Debug
+Get-FabricKQLDatabase -WorkspaceId $workspace.id -Debug
+Get-FabricKQLDatabase -WorkspaceId $workspace.id -KQLDatabaseName "EH02" -Debug
+Get-FabricKQLDatabase -WorkspaceId $workspace.id -KQLDatabaseId "ea5c8259-389d-4d1d-b9d6-449e075fa315" -Debug
 
-## Get Lakehouse
+## add KQL Database
 $workspace = Get-FabricWorkspace -WorkspaceName "Tiago API"
-Get-FabricLakehouse -WorkspaceId $workspace.id -Debug
-Get-FabricLakehouse -WorkspaceId $workspace.id -LakehouseName "LH01" -Debug
-Get-FabricLakehouse -WorkspaceId $workspace.id -LakehouseId "92b0be44-17ec-462f-bd84-41eaaad91edf" -Debug
+$eventhouse = Get-FabricEventhouse -WorkspaceId $workspace.id -EventhouseName "EH01"
+## Create a ReadWrite KQL database example
+New-FabricKQLDatabase -WorkspaceId $workspace.id -KQLDatabaseName "MyKQL2" -KQLDatabaseDescription "KQL Database Description" -KQLDatabaseType ReadWrite -parentEventhouseId $eventhouse.id -Debug
 
-## Update Lakehouse
+################### 
+## need to test
+
+#Create a Shortcut KQL database to source KQL database example
+$KQLDatabaseName = "TiagoKQL"
+$KQLDatabaseType = "Shortcut"
+$parentEventhouseId = "0000000"
+$KQLSourceDatabaseName = "SourceTiagoKQL"
+
+# Create a Shortcut KQL database to source Azure Data Explorer cluster example
+$KQLDatabaseName = "TiagoKQL"
+$KQLDatabaseType = "Shortcut"
+$parentEventhouseId = "0000000"
+$KQLSourceDatabaseName = "SourceTiagoKQL"
+$KQLSourceClusterUri = "https://tiagokql.westus.kusto.windows.net"
+
+
+# Create a Shortcut KQL database to source Azure Data Explorer cluster with invitation token example
+$KQLDatabaseName = "TiagoKQL"
+$KQLDatabaseType = "Shortcut"
+$parentEventhouseId = "0000000"
+$KQLInvitationToken = "1234567890"
+$KQLSourceDatabaseName = "SourceTiagoKQL"
+$KQLSourceClusterUri = "https://tiagokql.westus.kusto.windows.net"
+###################
+
+## update KQL Database
 $workspace = Get-FabricWorkspace -WorkspaceName "Tiago API"
-$lakehouse = Get-FabricLakehouse -WorkspaceId $workspace.id -LakehouseName "LH03"
-Update-FabricLakehouse -WorkspaceId $workspace.id -LakehouseId $lakehouse.id -LakehouseName "LH03Updated" -LakehouseDescription "LH Data Updated" -Debug
+$kqlDatabase = Get-FabricKQLDatabase -WorkspaceId $workspace.id -KQLDatabaseName "MyKQL2"
+Update-FabricKQLDatabase -WorkspaceId $workspace.id -KQLDatabaseId $kqlDatabase.id -KQLDatabaseName "MyKQL2 Updated" -KQLDatabaseDescription "KQL Database Description Updated" -Debug
 
-## remove Lakehouse
+## remove KQL Database
 $workspace = Get-FabricWorkspace -WorkspaceName "Tiago API"
-$lakehouse = Get-FabricLakehouse -WorkspaceId $workspace.id -LakehouseName "LH03Updated"
-Remove-FabricLakehouse -WorkspaceId $workspace.id -LakehouseId $lakehouse.id -Debug
+$kqlDatabase = Get-FabricKQLDatabase -WorkspaceId $workspace.id -KQLDatabaseName "MyKQL2 Updated"
+Remove-FabricKQLDatabase -WorkspaceId $workspace.id -KQLDatabaseId $kqlDatabase.id -Debug
 
-## List Lakehouse tables
+## Get KQL Database Definition
+$workspace = Get-FabricWorkspace -WorkspaceName "Tiago API"
+$kqlDatabase = Get-FabricKQLDatabase -WorkspaceId $workspace.id -KQLDatabaseName "MyKQL"
+Get-FabricKQLDatabaseDefinition -WorkspaceId $workspace.id -KQLDatabaseId $kqlDatabase.id -Debug
+
+
+New-FabricKQLDatabase `
+-WorkspaceId "dda81258-3461-4135-b4db-71552064e50ac" `
+-KQLSourceDatabaseName "Source DB"`
+-KQLDatabaseDescription "KQL Database Description" `
+-KQLDatabaseName "New KQLDatabase" `
+-KQLDatabaseType Shortcut `
+-parentEventhouseId "0000000" `
+-KQLSourceClusterUri "https://sourcekql.westus.kusto.windows.net"  `
+-Debug
+
+New-FabricKQLDatabase `
+-WorkspaceId "workspace-12345" `
+-KQLDatabaseDescription "KQL Database Description" `
+-KQLDatabaseName "New KQLDatabase" `
+-KQLDatabaseType "Shortcut" `
+-parentEventhouseId "0000000" `
+-KQLSourceDatabaseName "SourceKQLDatabase" `
+-KQLSourceClusterUri "https://sourcekql.westus.kusto.windows.net"  `
+-KQLInvitationToken "798798789798789778979879798"
+
+
+#-KQLDatabasePathDefinition "C:\temp\API\KQLDatabase.json"
+#
+
+
+$KQLDatabaseName = $null
+$KQLDatabaseType = $null
+$parentEventhouseId = $null
+$KQLInvitationToken = $null
+$KQLSourceDatabaseName = $null
+$KQLSourceClusterUri = $null
+
+#Create a ReadWrite KQL database example
+$KQLDatabaseName = "TiagoKQL"
+$KQLDatabaseType = "ReadWrite"
+$parentEventhouseId = "0000000"
+
+#Create a Shortcut KQL database to source KQL database example
+$KQLDatabaseName = "TiagoKQL"
+$KQLDatabaseType = "Shortcut"
+$parentEventhouseId = "0000000"
+$KQLSourceDatabaseName = "SourceTiagoKQL"
+
+# Create a Shortcut KQL database to source Azure Data Explorer cluster example
+$KQLDatabaseName = "TiagoKQL"
+$KQLDatabaseType = "Shortcut"
+$parentEventhouseId = "0000000"
+$KQLSourceDatabaseName = "SourceTiagoKQL"
+$KQLSourceClusterUri = "https://tiagokql.westus.kusto.windows.net"
+
+
+# Create a Shortcut KQL database to source Azure Data Explorer cluster with invitation token example
+$KQLDatabaseName = "TiagoKQL"
+$KQLDatabaseType = "Shortcut"
+$parentEventhouseId = "0000000"
+$KQLInvitationToken = "1234567890"
+$KQLSourceDatabaseName = "SourceTiagoKQL"
+$KQLSourceClusterUri = "https://tiagokql.westus.kusto.windows.net"
+
+
+$workspace = New-FabricWorkspace -WorkspaceName "Tiago API 233" -WorkspaceDescription "API data workspace" -Debug
+Add-FabricWorkspaceIdentity -WorkspaceId $workspace.id -Debug
+
+
 $workspace = Get-FabricWorkspace -WorkspaceName "Tiago API"
 $lakehouse = Get-FabricLakehouse -WorkspaceId $workspace.id -LakehouseName "LH01"
-Get-FabricLakehouseTable -WorkspaceId $workspace.id -LakehouseId $lakehouse.id -Debug
+Start-FabricLakehouseTableMaintenance -WorkspaceId $workspace.id -LakehouseId $lakehouse.id -TableName "Table01" -waitForCompletion $true 
 
-$bodyJson = '{
-  "displayName": "LH03 Updated",
-  "description": "LH Data Updated"
-}'
-
-$apiEndpointUrl= "https://api.fabric.microsoft.com/v1/workspaces/26cbd4ed-5920-4f2b-94ab-8e6ffbbdc48d/lakehouses/164b0c0a-baf9-45c4-bedd-be852cdbcf8b"
+$apiEndpointUrl ="https://api.fabric.microsoft.com/v1/workspaces/26cbd4ed-5920-4f2b-94ab-8e6ffbbdc48d/lakehouses/ec88cc2d-6306-429a-a73c-d2211bf06918/jobs/instances?jobType=TableMaintenance" 
 
 $response = Invoke-RestMethod `
--Headers $FabricConfig.FabricHeaders `
--Uri $apiEndpointUrl `
--Method Patch `
--Body $bodyJson `
--ContentType "application/json" `
--ErrorAction Stop `
--SkipHttpErrorCheck `
--StatusCodeVariable "statusCode"
-
+            -Headers $FabricConfig.FabricHeaders `
+            -Uri $apiEndpointUrl `
+            -Method Post `
+            -Body $bodyJson `
+            -ContentType "application/json" `
+            -ErrorAction Stop `
+            -SkipHttpErrorCheck `
+            -ResponseHeadersVariable "responseHeader" `
+            -StatusCodeVariable "statusCode"
 $response
+$responseHeader
+
 #################################################################
 # Capacity
 Get-FabricCapacity -Debug 
 Get-FabricCapacity -capacityId "6b3297a9-84d0-4f51-99ac-76dda2572ba4"
 Get-FabricCapacity -capacityName "tiagocapacity"
-Add-FabricWorkspace -WorkspaceName "Tiago API"
+New-FabricWorkspace -WorkspaceName "Tiago API"
 
-# Get Workspace
+###################################################################
+# Workspace
+## Get Workspace
 Get-FabricWorkspace -Debug
 Get-FabricWorkspace -WorkspaceName "Tiago API" -Debug
 Get-FabricWorkspace -WorkspaceId "dda81258-3461-4135-b4db-71552064e50ac" # ID does not exist
 
-# Add Workspace
-Add-FabricWorkspace -WorkspaceName "Tiago API" 
-Add-FabricWorkspace -WorkspaceName "Tiago API2" -WorkspaceDescription "API data workspace"
+## Add Workspace
+New-FabricWorkspace -WorkspaceName "Tiago API" 
+New-FabricWorkspace -WorkspaceName "Tiago API2" -WorkspaceDescription "API data workspace"
 $capacity = Get-FabricCapacity -capacityName "tiagocapacity"
-Add-FabricWorkspace -WorkspaceName "Tiago API3" -WorkspaceDescription "API data workspace" -CapacityId $capacity.id
+New-FabricWorkspace -WorkspaceName "Tiago API3" -WorkspaceDescription "API data workspace" -CapacityId $capacity.id
 
-# Update Workspace
-$workspace = Add-FabricWorkspace -WorkspaceName "Tiago AP54" 
+## Update Workspace
+$workspace = New-FabricWorkspace -WorkspaceName "Tiago AP54" 
 $workspace
 Update-FabricWorkspace -WorkspaceId $workspace.id -WorkspaceName "Tiago API4 UPDATED" -WorkspaceDescription "Updated description"
 #Remove-FabricWorkspace -WorkspaceId $workspace.id 
 
-# Remove Workspace 
+## Remove Workspace 
 $workspace = Get-FabricWorkspace -WorkspaceName "Tiago AP54" 
-$workspace
-#####
-Remove-FabricWorkspace -WorkspaceId $workspace.id 
+##### Remove-FabricWorkspace -WorkspaceId $workspace.id 
 $workspace = Get-FabricWorkspace -WorkspaceName "Tiago API3"
-######Remove-FabricWorkspace -WorkspaceId $workspace.id 
+###### Remove-FabricWorkspace -WorkspaceId $workspace.id 
 
-# Workspace Assign Capacity
+## Workspace Assign Capacity
 $capacity = Get-FabricCapacity -capacityName "tiagocapacity"
 $workspace = Get-FabricWorkspace -WorkspaceName "Tiago API"
 Assign-FabricWorkspaceCapacity -WorkspaceId $workspace.id -CapacityId $capacity.id
 
-# Workspace Unassign Capacity
+## Workspace Unassign Capacity
 $workspace = Get-FabricWorkspace -WorkspaceName "Tiago API"
 Unassign-FabricWorkspaceCapacity -WorkspaceId $workspace.id 
 
-# Provision Workspace Identity
+## Provision Workspace Identity
 $workspace = Get-FabricWorkspace -WorkspaceName "Tiago API"
 Add-FabricWorkspaceIdentity -WorkspaceId $workspace.id 
 
-# Deprovision Workspace Identity
+## Deprovision Workspace Identity
 $workspace = Get-FabricWorkspace -WorkspaceName "Tiago API"
 Remove-FabricWorkspaceIdentity -WorkspaceId $workspace.id 
 
-# Get Workspace Role Assignments 
+## Get Workspace Role Assignments 
 $workspace = Get-FabricWorkspace -WorkspaceName "Tiago API"
 Get-FabricWorkspaceRoleAssignment -WorkspaceId $workspace.id -Debug
 
-# Workspace Add Role Assignments - Principal Id must be EntraID
+## Workspace Add Role Assignments - Principal Id must be EntraID
 $workspace = Get-FabricWorkspace -WorkspaceName "Tiago API"
 Add-FabricWorkspaceRoleAssignment -WorkspaceId $workspace.id -PrincipalId "b5b9495c-685a-447a-b4d3-2d8e963e6288" -PrincipalType User -WorkspaceRole Admin
 
-# Update Workspace Role Assignments 
+## Update Workspace Role Assignments 
 $workspace = Get-FabricWorkspace -WorkspaceName "Tiago API"
 Get-FabricWorkspaceRoleAssignment -WorkspaceId $workspace.id
 Update-FabricWorkspaceRoleAssignment -WorkspaceId $workspace.id -WorkspaceRoleAssignmentId "b5b9495c-685a-447a-b4d3-2d8e963e6288" -WorkspaceRole Contributor
 
-# Remove Workspace Role Assignments 
+## Remove Workspace Role Assignments 
 $workspace = Get-FabricWorkspace -WorkspaceName "Tiago API"
 Get-FabricWorkspaceRoleAssignment -WorkspaceId $workspace.id
 Remove-FabricWorkspaceRoleAssignment -WorkspaceId $workspace.id -WorkspaceRoleAssignmentId "b5b9495c-685a-447a-b4d3-2d8e963e6288"
 
+###################################################################
 # Environment
 
 ## Add Environment
 $workspace = Get-FabricWorkspace -WorkspaceName "Tiago API"
-Add-FabricEnvironment -WorkspaceId $workspace.id -EnvironmentName "DevEnv01" -EnvironmentDescription "Development Environment"
+New-FabricEnvironment -WorkspaceId $workspace.id -EnvironmentName "DevEnv01" -EnvironmentDescription "Development Environment"
 
 ## Get Environment 
 $workspace = Get-FabricWorkspace -WorkspaceName "Tiago API"
@@ -139,7 +231,7 @@ $env = Get-FabricEnvironment -WorkspaceId $workspace.id -EnvironmentName "DevEnv
 Update-FabricEnvironment -WorkspaceId $workspace.id -EnvironmentId $env.id -EnvironmentName "DevEnv Updated" -EnvironmentDescription "Development Environment Updated"
 
 ## Remove Environment
-#Remove-FabricEnvironment -WorkspaceId $workspace.id -EnvironmentId $env.id
+Remove-FabricEnvironment -WorkspaceId $workspace.id -EnvironmentId $env.id
 
 ## Get Spark Compute
 Get-FabricEnvironmentSparkCompute -WorkspaceId $workspace.id -EnvironmentId $env.id
@@ -169,51 +261,20 @@ Upload-FabricEnvironmentStagingLibrary -WorkspaceId $workspace.id -EnvironmentId
 ## Remove Environment Staging Library
 Remove-FabricEnvironmentStagingLibrary -WorkspaceId $workspace.id -EnvironmentId $env.id -LibraryName "datagenerator-0.1-py3-none-any.whl"
 
-# Eventhouse
-$workspace = Get-FabricWorkspace -WorkspaceName "Tiago API"
-Add-FabricEventhouse -WorkspaceId $workspace.id -EventhouseName "EH01" -EventhouseDescription "EH Events"
+###################################################################
+# Tenant Setting
+## Get Tenant Setting
+Get-FabricTenantSetting -Debug
+Get-FabricTenantSetting  -SettingTitle "Users can create Fabric items" -Debug
 
-# Get Tenant Setting
-Get-FabricTenantSetting 
-Get-FabricTenantSetting  -SettingTitle "Users can create Fabric items"
-
-
-
-# Remove-FabricWorkspace -WorkspaceId $workspace.id
-
-$workspace = Get-FabricWorkspace -WorkspaceName "Learning" 
-Get-FabricWorkspaceRoleAssignment -WorkspaceId $workspace.id
-Get-FabricWorkspaceRoleAssignment -WorkspaceId $workspace.id -WorkspaceRoleAssignmentId "31fb536a-c93b-4e3c-a8b7-591991da005d"  | Format-Table
-
-## Add role assignment - Principal Id must be EntraID
-$workspace = Get-FabricWorkspace -WorkspaceName "tiagoworkspace1" 
-Get-FabricWorkspaceRoleAssignment -WorkspaceId $workspace.id
-Add-FabricWorkspaceRoleAssignment -WorkspaceId $workspace.id -PrincipalId "b5b9495c-685a-447a-b4d3-2d8e963e6288" -PrincipalType User -WorkspaceRole "Admin"
-Update-FabricWorkspaceRoleAssignment -WorkspaceId $workspace.id -workspaceRoleAssignmentId "b5b9495c-685a-447a-b4d3-2d8e963e6288" -WorkspaceRole Viewer
-Remove-FabricWorkspaceRoleAssignment -WorkspaceId $workspace.id -WorkspaceRoleAssignmentId "b5b9495c-685a-447a-b4d3-2d8e963e6288"
-
-
-# Set Workspace Capacity
-
-$capacity = Get-FabricCapacity -capacityName "tiagocapacity"
-#$workspace = Add-FabricWorkspace -WorkspaceName "Tiago API 152"
-$workspace = Get-FabricWorkspace -WorkspaceName "Tiago API 152"
-Set-FabricWorkspaceCapacity -WorkspaceId $workspace.id -CapacityId $capacity.id
-Remove-FabricWorkspaceCapacity -WorkspaceId $workspace.id
-
-# Provision Workspace Identity
-$workspace = Get-FabricWorkspace -WorkspaceName "Tiago API 152"
-Add-FabricWorkspaceIdentity -WorkspaceId $workspace.id
-Remove-FabricWorkspaceIdentity -WorkspaceId $workspace.id
-
+###################################################################
 # Domain
-
 ## Add Domain
 
-Add-FabricDomain -DomainName "API1" 
-Add-FabricDomain -DomainName "API2" -DomainDescription "API data domain"
-Add-FabricDomain -DomainName "API3" -DomainDescription "API data domain" -ParentDomainId "e2e8530e-bdad-468a-9634-7c5dd10ab703"
-Add-FabricDomain -DomainName "API4" -ParentDomainId "e2e8530e-bdad-468a-9634-7c5dd10ab703"
+New-FabricDomain -DomainName "API1" 
+New-FabricDomain -DomainName "API2" -DomainDescription "API data domain"
+New-FabricDomain -DomainName "API3" -DomainDescription "API data domain" -ParentDomainId "e2e8530e-bdad-468a-9634-7c5dd10ab703"
+New-FabricDomain -DomainName "API4" -ParentDomainId "e2e8530e-bdad-468a-9634-7c5dd10ab703"
 
 ## Get Domain
 Get-FabricDomain 
@@ -266,12 +327,12 @@ $PrincipalIds = @( @{id = "813abb4a-414c-4ac0-9c2c-bd17036fd58c"; type = "User" 
     @{id = "b5b9495c-685a-447a-b4d3-2d8e963e6288"; type = "User" })
 Unassign-FabricDomainWorkspaceRoleAssignment -DomainId $domain.id -DomainRole Admins -PrincipalIds $PrincipalIds -Debug
 
-
+###################################################################
 # Notebook
 ## Add Notebook 
 ### It must a ipynb file
 $workspace = Get-FabricWorkspace -WorkspaceName "Tiago API"
-Add-FabricNotebook -WorkspaceId $workspace.id -NotebookName "Generate888" -NotebookDescription "Notebook Description" -NotebookPathDefinition "C:\temp\API\Generate Data.ipynb" -NotebookPathPlatformDefinition "C:\temp\API\.platform" -Debug
+New-FabricNotebook -WorkspaceId $workspace.id -NotebookName "Generate888" -NotebookDescription "Notebook Description" -NotebookPathDefinition "C:\temp\API\Generate Data.ipynb" -NotebookPathPlatformDefinition "C:\temp\API\.platform" -Debug
 
  ## Get Notebook
 $workspace = Get-FabricWorkspace -WorkspaceName "Tiago API"
@@ -302,7 +363,7 @@ Remove-FabricNotebook -WorkspaceId $workspace.id -NotebookId $notebook.id -Debug
 
 ### It must a ipynb file
 $workspace = Get-FabricWorkspace -WorkspaceName "Tiago API"
-Add-FabricNotebook -WorkspaceId $workspace.id `
+New-FabricNotebook -WorkspaceId $workspace.id `
     -NotebookName "Generate008" `
     -NotebookDescription "Notebook Description" `
     -NotebookPathDefinition "C:\temp\API\Generate Data.ipynb" `
@@ -315,8 +376,8 @@ $workspace = Get-FabricWorkspace -WorkspaceName "Tiago API"
 $notebook = Get-FabricNotebook -WorkspaceId $workspace.id -NotebookName "Notebook120"
 Update-FabricNotebookDefinition -WorkspaceId $workspace.id -NotebookId $notebook.id -NotebookPathDefinition "C:\temp\API\Generate Data.ipynb" -NotebookPathPlatformDefinition "C:\temp\API\.platform" -Debug
 
+###################################################################
 # Eventhouse
-
 ## Get Eventhouse
 $workspace = Get-FabricWorkspace -WorkspaceName "Tiago API"
 Get-FabricEventhouse -WorkspaceId $workspace.id -debug
@@ -325,7 +386,8 @@ Get-FabricEventhouse -WorkspaceId $workspace.id -EventhouseId "66ba709c-6531-465
 
 ## Add Eventhouse
 $workspace = Get-FabricWorkspace -WorkspaceName "Tiago API"
-Add-FabricEventhouse -WorkspaceId $workspace.id -EventhouseName "EH05" -EventhouseDescription "EH Events" -Debug
+New-FabricEventhouse -WorkspaceId $workspace.id -EventhouseName "EH01" -EventhouseDescription "EH Events" -Debug
+New-FabricEventhouse -WorkspaceId $workspace.id -EventhouseName "EH05" -EventhouseDescription "EH Events" -Debug
 
 ## Update Eventhouse
 $workspace = Get-FabricWorkspace -WorkspaceName "Tiago API"
@@ -342,13 +404,12 @@ $workspace = Get-FabricWorkspace -WorkspaceName "Tiago API"
 $eventhouse = Get-FabricEventhouse -WorkspaceId $workspace.id -EventhouseName "EH01"
 Get-FabricEventhouseDefinition -WorkspaceId $workspace.id -EventhouseId $eventhouse.id -Debug
 
-
+###################################################################
 # Eventstream
-
 ## Add Eventstream
 $workspace = Get-FabricWorkspace -WorkspaceName "Tiago API"
-Add-FabricEventstream -WorkspaceId $workspace.id -EventstreamName "ES01" -EventstreamDescription "ES Events" # -EventstreamPathDefinition "C:\temp\API\Generate Data.ipynb" -EventstreamPathPlatformDefinition "C:\temp\API\.platform" -Debug
-Add-FabricEventstream -WorkspaceId $workspace.id -EventstreamName "ES02" -EventstreamDescription "ES Events" # -EventstreamPathDefinition "C:\temp\API\Generate Data.ipynb" -EventstreamPathPlatformDefinition "C:\temp\API\.platform" -Debug
+New-FabricEventstream -WorkspaceId $workspace.id -EventstreamName "ES01" -EventstreamDescription "ES Events" # -EventstreamPathDefinition "C:\temp\API\Generate Data.ipynb" -EventstreamPathPlatformDefinition "C:\temp\API\.platform" -Debug
+New-FabricEventstream -WorkspaceId $workspace.id -EventstreamName "ES02" -EventstreamDescription "ES Events" # -EventstreamPathDefinition "C:\temp\API\Generate Data.ipynb" -EventstreamPathPlatformDefinition "C:\temp\API\.platform" -Debug
 
 ## Get Eventstream
 $workspace = Get-FabricWorkspace -WorkspaceName "Tiago API"
@@ -365,3 +426,71 @@ Update-FabricEventstream -WorkspaceId $workspace.id -EventstreamId $eventstream.
 $workspace = Get-FabricWorkspace -WorkspaceName "Tiago API"
 $eventstream = Get-FabricEventstream -WorkspaceId $workspace.id -EventstreamName "ES02 Updated"
 Remove-FabricEventstream -WorkspaceId $workspace.id -EventstreamId $eventstream.id -Debug
+
+
+
+#Lakehouse
+## Add Lakehouse
+$workspace = Get-FabricWorkspace -WorkspaceName "Tiago API"
+New-FabricLakehouse -WorkspaceId $workspace.id -LakehouseName "LH01" -LakehouseDescription "LH Data" -Debug
+New-FabricLakehouse -WorkspaceId $workspace.id -LakehouseName "LH02" -LakehouseDescription "LH Data" -LakehouseEnableSchemas $true -Debug
+New-FabricLakehouse -WorkspaceId $workspace.id -LakehouseName "LH03" -LakehouseDescription "LH Data" -Debug
+
+## Get Lakehouse
+$workspace = Get-FabricWorkspace -WorkspaceName "Tiago API"
+Get-FabricLakehouse -WorkspaceId $workspace.id -Debug
+Get-FabricLakehouse -WorkspaceId $workspace.id -LakehouseName "LH01" -Debug
+Get-FabricLakehouse -WorkspaceId $workspace.id -LakehouseId "92b0be44-17ec-462f-bd84-41eaaad91edf" -Debug
+
+$lakehouses = Get-FabricLakehouse -WorkspaceId $workspace.id -LakehouseName "LH02"
+$lakehouses.properties.PSObject.Properties['defaultSchema']
+
+if ($lakehouses.properties.PSObject.Properties['defaultSchema']) {
+    Write-Host "The 'defaultSchema' property exists."
+} else {
+    Write-Host "The 'defaultSchema' property does not exist."
+}
+
+
+## Update Lakehouse
+$workspace = Get-FabricWorkspace -WorkspaceName "Tiago API"
+$lakehouse = Get-FabricLakehouse -WorkspaceId $workspace.id -LakehouseName "LH03"
+Update-FabricLakehouse -WorkspaceId $workspace.id -LakehouseId $lakehouse.id -LakehouseName "LH03Updated" -LakehouseDescription "LH Data Updated" -Debug
+
+## remove Lakehouse
+$workspace = Get-FabricWorkspace -WorkspaceName "Tiago API"
+$lakehouse = Get-FabricLakehouse -WorkspaceId $workspace.id -LakehouseName "LH03Updated"
+Remove-FabricLakehouse -WorkspaceId $workspace.id -LakehouseId $lakehouse.id -Debug
+
+## List Lakehouse tables
+$workspace = Get-FabricWorkspace -WorkspaceName "Tiago API"
+$lakehouse = Get-FabricLakehouse -WorkspaceId $workspace.id -LakehouseName "LH01"
+Get-FabricLakehouseTable -WorkspaceId $workspace.id -LakehouseId $lakehouse.id -Debug
+
+## Load Lakehouse Table
+$workspace = Get-FabricWorkspace -WorkspaceName "Tiago API"
+$lakehouse = Get-FabricLakehouse -WorkspaceId $workspace.id -LakehouseName "LH01"
+$lakehouse = Get-FabricLakehouse -WorkspaceId $workspace.id -LakehouseName "LH01"
+Load-FabricLakehouseTable -WorkspaceId $workspace.id -LakehouseId $lakehouse.id -TableName "Table04" -PathType File `
+-RelativePath "Files/test.csv" -FileFormat CSV -Mode append -CsvDelimiter "," -CsvHeader $true -Recursive $false -Debug
+
+
+Load-FabricLakehouseTable `
+-WorkspaceId $workspace.id `
+-LakehouseId $lakehouse.id `
+-TableName "Table03" `
+-PathType File `
+-RelativePath "Files/test.parquet" `
+-FileFormat Parquet `
+-Mode append `
+-Recursive $false `
+-Debug
+
+$apiEndpointUrl = "https://api.fabric.microsoft.com/v1/operations/27d158cc-23e9-4ea1-b646-a3aaf274ece1/result"
+Invoke-RestMethod `
+            -Headers $FabricConfig.FabricHeaders `
+            -Uri $apiEndpointUrl `
+            -Method Get `
+            -ErrorAction Stop `
+            -ResponseHeadersVariable responseHeader `
+            -StatusCodeVariable statusCode

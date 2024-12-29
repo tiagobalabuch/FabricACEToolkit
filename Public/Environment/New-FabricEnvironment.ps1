@@ -27,7 +27,7 @@ Author: Tiago Balabuch
 Date: 2024-12-15
 #>
 
-function Add-FabricEnvironment {
+function New-FabricEnvironment {
     [CmdletBinding()]
     param (
         [Parameter(Mandatory = $true)]

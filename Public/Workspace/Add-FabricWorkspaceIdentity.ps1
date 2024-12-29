@@ -59,9 +59,16 @@ function Add-FabricWorkspaceIdentity {
             202 {
                 Write-Message -Message "Workspace identity provisioning accepted for workspace '$WorkspaceId'. Provisioning in progress!" -Level Info
                 [string]$operationId = $responseHeader["x-ms-operation-id"]
+                [string]$location = $responseHeader["Location"]
+                [string]$retryAfter = $responseHeader["Retry-After"] 
+
                 Write-Message -Message "Operation ID: '$operationId'" -Level Debug
+                Write-Message -Message "Location: '$location'" -Level Debug
+                Write-Message -Message "Retry-After: '$retryAfter'" -Level Debug
+
                 Write-Message -Message "Getting Long Running Operation status" -Level Debug
                
+
                 $operationStatus = Get-FabricLongRunningOperation -operationId $operationId
                 Write-Message -Message "Long Running Operation status: $operationStatus" -Level Debug
                 # Handle operation result

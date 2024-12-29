@@ -22,7 +22,6 @@ Checks the token expiration status using the provided `$config` object.
 .AUTHOR
 Tiago Balabuch
 #>
-get-verb
 function Test-TokenExpired {
     [CmdletBinding()]
     param ()

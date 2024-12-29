@@ -1,39 +1,33 @@
 <#
 .SYNOPSIS
-Creates a new KQLQueryset in a specified Microsoft Fabric workspace.
+Creates a new Eventhouse in a specified workspace.
 
 .DESCRIPTION
-This function sends a POST request to the Microsoft Fabric API to create a new KQLQueryset 
-in the specified workspace. It supports optional parameters for KQLQueryset description 
-and path definitions for the KQLQueryset content.
+The `Add-FabricEventhouse` function sends a POST request to the Fabric API to create a new Eventhouse in the specified workspace. The function allows specifying an optional description for the Eventhouse.
 
 .PARAMETER WorkspaceId
-The unique identifier of the workspace where the KQLQueryset will be created.
+(Mandatory) The ID of the workspace where the Eventhouse will be created.
 
-.PARAMETER KQLQuerysetName
-The name of the KQLQueryset to be created.
+.PARAMETER EventhouseName
+(Mandatory) The name of the Eventhouse to be created. Only alphanumeric characters, spaces, and underscores are allowed.
 
-.PARAMETER KQLQuerysetDescription
-An optional description for the KQLQueryset.
-
-.PARAMETER KQLQuerysetPathDefinition
-An optional path to the KQLQueryset definition file (e.g., .ipynb file) to upload.
-
-.PARAMETER KQLQuerysetPathPlatformDefinition
-An optional path to the platform-specific definition (e.g., .platform file) to upload.
+.PARAMETER EventhouseDescription
+(Optional) A description of the Eventhouse.
 
 .EXAMPLE
- Add-FabricKQLQueryset -WorkspaceId "workspace-12345" -KQLQuerysetName "New KQLQueryset" -KQLQuerysetPathDefinition "C:\KQLQuerysets\example.ipynb"
+Add-FabricEventhouse -WorkspaceId "12345" -EventhouseName "MainEvents" -EventhouseDescription "Handles core event streaming."
 
- .NOTES
+Creates an Eventhouse named "MainEvents" in workspace "12345" with the provided description.
+
+.NOTES
 - Requires `$FabricConfig` global configuration, including `BaseUrl` and `FabricHeaders`.
-- Calls `Test-TokenExpired` to ensure token validity before making the API request.
+- Ensures token validity before making the API request.
 
 Author: Tiago Balabuch  
-Date: 2024-12-14
+Date: 2024-12-15
 #>
 
-function Add-FabricKQLQueryset {
+function New-FabricEventhouse {
     [CmdletBinding()]
     param (
         [Parameter(Mandatory = $true)]
@@ -43,19 +37,19 @@ function Add-FabricKQLQueryset {
         [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
         [ValidatePattern('^[a-zA-Z0-9_ ]*$')]
-        [string]$KQLQuerysetName,
+        [string]$EventhouseName,
 
         [Parameter(Mandatory = $false)]
         [ValidateNotNullOrEmpty()]
-        [string]$KQLQuerysetDescription,
+        [string]$EventhouseDescription,
 
         [Parameter(Mandatory = $false)]
         [ValidateNotNullOrEmpty()]
-        [string]$KQLQuerysetPathDefinition,
+        [string]$EventhousePathDefinition,
         
         [Parameter(Mandatory = $false)]
         [ValidateNotNullOrEmpty()]
-        [string]$KQLQuerysetPathPlatformDefinition
+        [string]$EventhousePathPlatformDefinition
     )
 
     try {
@@ -65,51 +59,48 @@ function Add-FabricKQLQueryset {
         Write-Message -Message "Token validation completed." -Level Debug
 
         # Step 2: Construct the API URL
-        $apiEndpointUrl = "{0}/workspaces/{1}/kqlQuerysets" -f $FabricConfig.BaseUrl, $WorkspaceId
+        $apiEndpointUrl = "{0}/workspaces/{1}/eventhouses" -f $FabricConfig.BaseUrl, $WorkspaceId
         Write-Message -Message "API Endpoint: $apiEndpointUrl" -Level Debug
 
         # Step 3: Construct the request body
         $body = @{
-            displayName = $KQLQuerysetName
+            displayName = $EventhouseName
         }
 
-        if ($KQLQuerysetDescription) {
-            $body.description = $KQLQuerysetDescription
+        if ($EventhouseDescription) {
+            $body.description = $EventhouseDescription
         }
+        if ($EventhousePathDefinition) {
+            $eventhouseEncodedContent = Encode-ToBase64 -filePath $EventhousePathDefinition
 
-        if ($KQLQuerysetPathDefinition) {
-            $KQLQuerysetEncodedContent = Encode-ToBase64 -filePath $KQLQuerysetPathDefinition
-
-            if (-not [string]::IsNullOrEmpty($KQLQuerysetEncodedContent)) {
+            if (-not [string]::IsNullOrEmpty($eventhouseEncodedContent)) {
                 # Initialize definition if it doesn't exist
                 if (-not $body.definition) {
                     $body.definition = @{
-                        format = $null
                         parts  = @()
                     }
                 }
 
                 # Add new part to the parts array
                 $body.definition.parts += @{
-                    path        = "RealTimeQueryset.json"
-                    payload     = $KQLQuerysetEncodedContent
+                    path        = "EventhouseProperties.json"
+                    payload     = $eventhouseEncodedContent
                     payloadType = "InlineBase64"
                 }
             }
             else {
-                Write-Message -Message "Invalid or empty content in KQLQueryset definition." -Level Error
+                Write-Message -Message "Invalid or empty content in Eventhouse definition." -Level Error
                 return $null
             }
         }
 
-        if ($KQLQuerysetPathPlatformDefinition) {
-            $KQLQuerysetEncodedPlatformContent = Encode-ToBase64 -filePath $KQLQuerysetPathPlatformDefinition
+        if ($EventhousePathPlatformDefinition) {
+            $eventhouseEncodedPlatformContent = Encode-ToBase64 -filePath $EventhousePathPlatformDefinition
 
-            if (-not [string]::IsNullOrEmpty($KQLQuerysetEncodedPlatformContent)) {
+            if (-not [string]::IsNullOrEmpty($eventhouseEncodedPlatformContent)) {
                 # Initialize definition if it doesn't exist
                 if (-not $body.definition) {
                     $body.definition = @{
-                        format = $null
                         parts  = @()
                     }
                 }
@@ -117,7 +108,7 @@ function Add-FabricKQLQueryset {
                 # Add new part to the parts array
                 $body.definition.parts += @{
                     path        = ".platform"
-                    payload     = $KQLQuerysetEncodedPlatformContent
+                    payload     = $eventhouseEncodedPlatformContent
                     payloadType = "InlineBase64"
                 }
             }
@@ -127,7 +118,8 @@ function Add-FabricKQLQueryset {
             }
         }
 
-        $bodyJson = $body | ConvertTo-Json -Depth 10
+        # Convert the body to JSON
+        $bodyJson = $body | ConvertTo-Json -Depth 2
         Write-Message -Message "Request Body: $bodyJson" -Level Debug
 
         # Step 4: Make the API request
@@ -141,16 +133,17 @@ function Add-FabricKQLQueryset {
             -SkipHttpErrorCheck `
             -ResponseHeadersVariable "responseHeader" `
             -StatusCodeVariable "statusCode"
-
+        
+        Write-Message -Message "Response Code: $statusCode" -Level Debug
+  
         # Step 5: Handle and log the response
         switch ($statusCode) {
             201 {
-                Write-Message -Message "KQLQueryset '$KQLQuerysetName' created successfully!" -Level Info
+                Write-Message -Message "Eventhouse '$EventhouseName' created successfully!" -Level Info
                 return $response
             }
             202 {
-                Write-Message -Message "KQLQueryset '$KQLQuerysetName' creation accepted. Provisioning in progress!" -Level Info
-               
+                Write-Message -Message "Eventhouse '$EventhouseName' creation accepted. Provisioning in progress!" -Level Info
                 [string]$operationId = $responseHeader["x-ms-operation-id"]
                 Write-Message -Message "Operation ID: '$operationId'" -Level Debug
                 Write-Message -Message "Getting Long Running Operation status" -Level Debug
@@ -166,11 +159,8 @@ function Add-FabricKQLQueryset {
                     Write-Message -Message "Long Running Operation status: $operationResult" -Level Debug
                 
                     return $operationResult
-                }
-                else {
-                    Write-Message -Message "Operation Failed" -Level Debug
-                    return $operationStatus
-                }   
+                } 
+                #return $response.value
             }
             default {
                 Write-Message -Message "Unexpected response code: $statusCode" -Level Error
@@ -182,6 +172,6 @@ function Add-FabricKQLQueryset {
     catch {
         # Step 6: Handle and log errors
         $errorDetails = $_.Exception.Message
-        Write-Message -Message "Failed to create KQLQueryset. Error: $errorDetails" -Level Error
+        Write-Message -Message "Failed to create Eventhouse. Error: $errorDetails" -Level Error
     }
 }

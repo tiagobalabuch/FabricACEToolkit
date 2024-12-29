@@ -33,7 +33,7 @@ Author: Tiago Balabuch
 Date: 2024-12-14
 #>
 
-function Add-FabricEventstream {
+function New-FabricEventstream {
     [CmdletBinding()]
     param (
         [Parameter(Mandatory = $true)]
