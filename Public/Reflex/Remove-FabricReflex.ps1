@@ -1,20 +1,20 @@
 <#
 .SYNOPSIS
-    Removes an Eventhouse from a specified Microsoft Fabric workspace.
+    Removes an Reflex from a specified Microsoft Fabric workspace.
 
 .DESCRIPTION
-    This function sends a DELETE request to the Microsoft Fabric API to remove an Eventhouse 
-    from the specified workspace using the provided WorkspaceId and EventhouseId.
+    This function sends a DELETE request to the Microsoft Fabric API to remove an Reflex 
+    from the specified workspace using the provided WorkspaceId and ReflexId.
 
 .PARAMETER WorkspaceId
-    The unique identifier of the workspace from which the Eventhouse will be removed.
+    The unique identifier of the workspace from which the Reflex will be removed.
 
-.PARAMETER EventhouseId
-    The unique identifier of the Eventhouse to be removed.
+.PARAMETER ReflexId
+    The unique identifier of the Reflex to be removed.
 
 .EXAMPLE
-    PS C:\> Remove-FabricEventhouse -WorkspaceId "workspace-12345" -EventhouseId "eventhouse-67890"
-    This example removes the Eventhouse with ID "eventhouse-67890" from the workspace with ID "workspace-12345".
+    PS C:\> Remove-FabricReflex -WorkspaceId "workspace-12345" -ReflexId "Reflex-67890"
+    This example removes the Reflex with ID "Reflex-67890" from the workspace with ID "workspace-12345".
 
 .NOTES
     - Requires `$FabricConfig` global configuration, including `BaseUrl` and `FabricHeaders`.
@@ -23,7 +23,7 @@
     Author: Tiago Balabuch
     Date: 2024-12-15
 #>
-function Remove-FabricEventhouse {
+function Remove-FabricReflex {
     [CmdletBinding()]
     param (
         [Parameter(Mandatory = $true)]
@@ -32,7 +32,7 @@ function Remove-FabricEventhouse {
 
         [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
-        [string]$EventhouseId
+        [string]$ReflexId
     )
     try {
         # Step 1: Ensure token validity
@@ -41,7 +41,7 @@ function Remove-FabricEventhouse {
         Write-Message -Message "Token validation completed." -Level Debug
 
         # Step 2: Construct the API URL
-        $apiEndpointUrl = "{0}/workspaces/{1}/eventhouses/{2}" -f $FabricConfig.BaseUrl, $WorkspaceId, $EventhouseId
+        $apiEndpointUrl = "{0}/workspaces/{1}/reflexes/{2}" -f $FabricConfig.BaseUrl, $WorkspaceId, $ReflexId
         Write-Message -Message "API Endpoint: $apiEndpointUrl" -Level Debug
 
         # Step 3: Make the API request
@@ -63,11 +63,11 @@ function Remove-FabricEventhouse {
             return $null
         }
 
-        Write-Message -Message "Eventhouse '$EventhouseId' deleted successfully from workspace '$WorkspaceId'." -Level Info  
+        Write-Message -Message "Reflex '$ReflexId' deleted successfully from workspace '$WorkspaceId'." -Level Info  
     }
     catch {
         # Step 5: Log and handle errors
         $errorDetails = $_.Exception.Message
-        Write-Message -Message "Failed to delete Eventhouse '$EventhouseId'. Error: $errorDetails" -Level Error
+        Write-Message -Message "Failed to delete Reflex '$ReflexId'. Error: $errorDetails" -Level Error
     }
 }

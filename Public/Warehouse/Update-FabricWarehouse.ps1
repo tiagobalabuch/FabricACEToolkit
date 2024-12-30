@@ -1,26 +1,26 @@
 <#
 .SYNOPSIS
-    Updates an existing ML Model in a specified Microsoft Fabric workspace.
+    Updates an existing warehouse in a specified Microsoft Fabric workspace.
 
 .DESCRIPTION
-    This function sends a PATCH request to the Microsoft Fabric API to update an existing ML Model 
-    in the specified workspace. It supports optional parameters for ML Model description.
+    This function sends a PATCH request to the Microsoft Fabric API to update an existing warehouse 
+    in the specified workspace. It supports optional parameters for warehouse description.
 
 .PARAMETER WorkspaceId
-    The unique identifier of the workspace where the ML Model exists. This parameter is optional.
+    The unique identifier of the workspace where the warehouse exists. This parameter is optional.
 
-.PARAMETER MLModelId
-    The unique identifier of the ML Model to be updated. This parameter is mandatory.
+.PARAMETER WarehouseId
+    The unique identifier of the warehouse to be updated. This parameter is mandatory.
 
-.PARAMETER MLModelName
-    The new name of the ML Model. This parameter is mandatory.
+.PARAMETER WarehouseName
+    The new name of the warehouse. This parameter is mandatory.
 
-.PARAMETER MLModelDescription
-    An optional new description for the ML Model.
+.PARAMETER WarehouseDescription
+    An optional new description for the warehouse.
 
 .EXAMPLE
-    PS C:\> Update-FabricMLModel -WorkspaceId "workspace-12345" -MLModelId "model-67890" -MLModelName "Updated ML Model" -MLModelDescription "Updated description"
-    This example updates the ML Model with ID "model-67890" in the workspace with ID "workspace-12345" with a new name and description.
+    PS C:\> Update-FabricWarehouse -WorkspaceId "workspace-12345" -WarehouseId "warehouse-67890" -WarehouseName "Updated Warehouse" -WarehouseDescription "Updated description"
+    This example updates the warehouse with ID "warehouse-67890" in the workspace with ID "workspace-12345" with a new name and description.
 
 .NOTES
     - Requires `$FabricConfig` global configuration, including `BaseUrl` and `FabricHeaders`.
@@ -29,7 +29,7 @@
     Author: Tiago Balabuch
     Date: 2024-12-15
 #>
-function Update-FabricMLModel {
+function Update-FabricWarehouse {
     [CmdletBinding()]
     param (
         [Parameter(Mandatory = $true)]
@@ -38,16 +38,16 @@ function Update-FabricMLModel {
         
         [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
-        [string]$MLModelId,
+        [string]$WarehouseId,
 
         [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
         [ValidatePattern('^[a-zA-Z0-9_ ]*$')]
-        [string]$MLModelName,
+        [string]$WarehouseName,
 
         [Parameter(Mandatory = $false)]
         [ValidateNotNullOrEmpty()]
-        [string]$MLModelDescription
+        [string]$WarehouseDescription
     )
 
     try {
@@ -57,16 +57,16 @@ function Update-FabricMLModel {
         Write-Message -Message "Token validation completed." -Level Debug
 
         # Step 2: Construct the API URL
-        $apiEndpointUrl = "{0}/workspaces/{1}/MLModels/{2}" -f $FabricConfig.BaseUrl, $WorkspaceId, $MLModelId
+        $apiEndpointUrl = "{0}/workspaces/{1}/warehouses/{2}" -f $FabricConfig.BaseUrl, $WorkspaceId, $WarehouseId
         Write-Message -Message "API Endpoint: $apiEndpointUrl" -Level Debug
 
         # Step 3: Construct the request body
         $body = @{
-            displayName = $MLModelName
+            displayName = $WarehouseName
         }
 
-        if ($MLModelDescription) {
-            $body.description = $MLModelDescription
+        if ($WarehouseDescription) {
+            $body.description = $WarehouseDescription
         }
 
         # Convert the body to JSON
@@ -94,12 +94,12 @@ function Update-FabricMLModel {
         }
 
         # Step 6: Handle results
-        Write-Message -Message "ML Model '$MLModelName' updated successfully!" -Level Info
+        Write-Message -Message "Warehouse '$WarehouseName' updated successfully!" -Level Info
         return $response
     }
     catch {
         # Step 7: Handle and log errors
         $errorDetails = $_.Exception.Message
-        Write-Message -Message "Failed to update ML Model. Error: $errorDetails" -Level Error
+        Write-Message -Message "Failed to update Warehouse. Error: $errorDetails" -Level Error
     }
 }

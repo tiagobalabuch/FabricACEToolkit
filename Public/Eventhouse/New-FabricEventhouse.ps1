@@ -1,32 +1,37 @@
 <#
 .SYNOPSIS
-Creates a new Eventhouse in a specified workspace.
+    Creates a new Eventhouse in a specified Microsoft Fabric workspace.
 
 .DESCRIPTION
-The `Add-FabricEventhouse` function sends a POST request to the Fabric API to create a new Eventhouse in the specified workspace. The function allows specifying an optional description for the Eventhouse.
+    This function sends a POST request to the Microsoft Fabric API to create a new Eventhouse 
+    in the specified workspace. It supports optional parameters for Eventhouse description and path definitions.
 
 .PARAMETER WorkspaceId
-(Mandatory) The ID of the workspace where the Eventhouse will be created.
+    The unique identifier of the workspace where the Eventhouse will be created. This parameter is mandatory.
 
 .PARAMETER EventhouseName
-(Mandatory) The name of the Eventhouse to be created. Only alphanumeric characters, spaces, and underscores are allowed.
+    The name of the Eventhouse to be created. This parameter is mandatory.
 
 .PARAMETER EventhouseDescription
-(Optional) A description of the Eventhouse.
+    An optional description for the Eventhouse.
+
+.PARAMETER EventhousePathDefinition
+    An optional path to the Eventhouse definition file to upload.
+
+.PARAMETER EventhousePathPlatformDefinition
+    An optional path to the platform-specific definition file to upload.
 
 .EXAMPLE
-Add-FabricEventhouse -WorkspaceId "12345" -EventhouseName "MainEvents" -EventhouseDescription "Handles core event streaming."
-
-Creates an Eventhouse named "MainEvents" in workspace "12345" with the provided description.
+    PS C:\> New-FabricEventhouse -WorkspaceId "workspace-12345" -EventhouseName "New Eventhouse" -EventhouseDescription "Description of the new Eventhouse"
+    This example creates a new Eventhouse named "New Eventhouse" in the workspace with ID "workspace-12345" with the provided description.
 
 .NOTES
-- Requires `$FabricConfig` global configuration, including `BaseUrl` and `FabricHeaders`.
-- Ensures token validity before making the API request.
+    - Requires `$FabricConfig` global configuration, including `BaseUrl` and `FabricHeaders`.
+    - Calls `Test-TokenExpired` to ensure token validity before making the API request.
 
-Author: Tiago Balabuch  
-Date: 2024-12-15
+    Author: Tiago Balabuch
+    Date: 2024-12-15
 #>
-
 function New-FabricEventhouse {
     [CmdletBinding()]
     param (
@@ -51,7 +56,6 @@ function New-FabricEventhouse {
         [ValidateNotNullOrEmpty()]
         [string]$EventhousePathPlatformDefinition
     )
-
     try {
         # Step 1: Ensure token validity
         Write-Message -Message "Validating token..." -Level Debug
@@ -119,7 +123,7 @@ function New-FabricEventhouse {
         }
 
         # Convert the body to JSON
-        $bodyJson = $body | ConvertTo-Json -Depth 2
+        $bodyJson = $body | ConvertTo-Json -Depth 10
         Write-Message -Message "Request Body: $bodyJson" -Level Debug
 
         # Step 4: Make the API request
@@ -144,11 +148,17 @@ function New-FabricEventhouse {
             }
             202 {
                 Write-Message -Message "Eventhouse '$EventhouseName' creation accepted. Provisioning in progress!" -Level Info
+                
                 [string]$operationId = $responseHeader["x-ms-operation-id"]
+                [string]$location = $responseHeader["Location"]
+                [string]$retryAfter = $responseHeader["Retry-After"] 
+
                 Write-Message -Message "Operation ID: '$operationId'" -Level Debug
+                Write-Message -Message "Location: '$location'" -Level Debug
+                Write-Message -Message "Retry-After: '$retryAfter'" -Level Debug
                 Write-Message -Message "Getting Long Running Operation status" -Level Debug
                
-                $operationStatus = Get-FabricLongRunningOperation -operationId $operationId
+                $operationStatus = Get-FabricLongRunningOperation -operationId $operationId -location $location
                 Write-Message -Message "Long Running Operation status: $operationStatus" -Level Debug
                 # Handle operation result
                 if ($operationStatus.status -eq "Succeeded") {
@@ -160,11 +170,16 @@ function New-FabricEventhouse {
                 
                     return $operationResult
                 } 
-                #return $response.value
+                else {
+                    Write-Message -Message "Operation Failed" -Level Debug
+                    return $operationStatus
+                }   
             }
             default {
-                Write-Message -Message "Unexpected response code: $statusCode" -Level Error
-                Write-Message -Message "Error details: $($response.message)" -Level Error
+                Write-Message -Message "Unexpected response code: $statusCode from the API." -Level Error
+                Write-Message -Message "Error: $($response.message)" -Level Error
+                Write-Message -Message "Error Details: $($response.moreDetails)" -Level Error
+                Write-Message "Error Code: $($response.errorCode)" -Level Error
                 throw "API request failed with status code $statusCode."
             }
         }

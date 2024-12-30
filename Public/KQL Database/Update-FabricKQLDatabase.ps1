@@ -35,7 +35,7 @@ Date: 2024-12-14
 function Update-FabricKQLDatabase {
     [CmdletBinding()]
     param (
-        [Parameter(Mandatory = $false)]
+        [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
         [string]$WorkspaceId,   
         

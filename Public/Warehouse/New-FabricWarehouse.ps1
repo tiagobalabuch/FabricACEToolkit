@@ -1,27 +1,23 @@
 <#
 .SYNOPSIS
-    Retrieves the definition of an Eventhouse from a specified Microsoft Fabric workspace.
+    Creates a new warehouse in a specified Microsoft Fabric workspace.
 
 .DESCRIPTION
-    This function retrieves the definition of an Eventhouse from a specified workspace using the provided EventhouseId.
-    It handles token validation, constructs the API URL, makes the API request, and processes the response.
+    This function sends a POST request to the Microsoft Fabric API to create a new warehouse 
+    in the specified workspace. It supports optional parameters for warehouse description.
 
 .PARAMETER WorkspaceId
-    The unique identifier of the workspace where the Eventhouse exists. This parameter is mandatory.
+    The unique identifier of the workspace where the warehouse will be created. This parameter is mandatory.
 
-.PARAMETER EventhouseId
-    The unique identifier of the Eventhouse to retrieve the definition for. This parameter is optional.
+.PARAMETER WarehouseName
+    The name of the warehouse to be created. This parameter is mandatory.
 
-.PARAMETER EventhouseFormat
-    The format in which to retrieve the Eventhouse definition. This parameter is optional.
-
-.EXAMPLE
-    PS C:\> Get-FabricEventhouseDefinition -WorkspaceId "workspace-12345" -EventhouseId "eventhouse-67890"
-    This example retrieves the definition of the Eventhouse with ID "eventhouse-67890" in the workspace with ID "workspace-12345".
+.PARAMETER WarehouseDescription
+    An optional description for the warehouse.
 
 .EXAMPLE
-    PS C:\> Get-FabricEventhouseDefinition -WorkspaceId "workspace-12345" -EventhouseId "eventhouse-67890" -EventhouseFormat "json"
-    This example retrieves the definition of the Eventhouse with ID "eventhouse-67890" in the workspace with ID "workspace-12345" in JSON format.
+    PS C:\> New-FabricWarehouse -WorkspaceId "workspace-12345" -WarehouseName "New Warehouse" -WarehouseDescription "Description of the new warehouse"
+    This example creates a new warehouse named "New Warehouse" in the workspace with ID "workspace-12345" with the provided description.
 
 .NOTES
     - Requires `$FabricConfig` global configuration, including `BaseUrl` and `FabricHeaders`.
@@ -30,55 +26,66 @@
     Author: Tiago Balabuch
     Date: 2024-12-15
 #>
-function Get-FabricEventhouseDefinition {
+function New-FabricWarehouse {
     [CmdletBinding()]
     param (
         [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
         [string]$WorkspaceId,
 
-        [Parameter(Mandatory = $false)]
+        [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
-        [string]$EventhouseId,
+        [ValidatePattern('^[a-zA-Z0-9_ ]*$')]
+        [string]$WarehouseName,
 
         [Parameter(Mandatory = $false)]
         [ValidateNotNullOrEmpty()]
-        [string]$EventhouseFormat
+        [string]$WarehouseDescription
     )
+
     try {
-        # Step 2: Ensure token validity
+        # Step 1: Ensure token validity
         Write-Message -Message "Validating token..." -Level Debug
         Test-TokenExpired
         Write-Message -Message "Token validation completed." -Level Debug
 
-        # Step 3: Construct the API URL
-        $apiEndpointUrl = "{0}/workspaces/{1}/eventhouses/{2}/getDefinition" -f $FabricConfig.BaseUrl, $WorkspaceId, $EventhouseId
-        
-        if ($EventhouseFormat) {
-            $apiEndpointUrl = "{0}?format={1}" -f $apiEndpointUrl, $EventhouseFormat
-        }
-        
+        # Step 2: Construct the API URL
+        $apiEndpointUrl = "{0}/workspaces/{1}/warehouses" -f $FabricConfig.BaseUrl, $WorkspaceId
         Write-Message -Message "API Endpoint: $apiEndpointUrl" -Level Debug
+
+        # Step 3: Construct the request body
+        $body = @{
+            displayName = $WarehouseName
+        }
+
+        if ($WarehouseDescription) {
+            $body.description = $WarehouseDescription
+        }
+
+        $bodyJson = $body | ConvertTo-Json -Depth 10
+        Write-Message -Message "Request Body: $bodyJson" -Level Debug
 
         # Step 4: Make the API request
         $response = Invoke-RestMethod `
             -Headers $FabricConfig.FabricHeaders `
             -Uri $apiEndpointUrl `
             -Method Post `
+            -Body $bodyJson `
+            -ContentType "application/json" `
             -ErrorAction Stop `
+            -SkipHttpErrorCheck `
             -ResponseHeadersVariable "responseHeader" `
             -StatusCodeVariable "statusCode"
 
-        # Step 5: Validate the response code and handle the response
+        # Step 5: Handle and log the response
         switch ($statusCode) {
-            200 {
-                Write-Message -Message "Eventhouse '$EventhouseId' definition retrieved successfully!" -Level Debug
+            201 {
+                Write-Message -Message "Warehouse '$WarehouseName' created successfully!" -Level Info
                 return $response
             }
             202 {
-
-                Write-Message -Message "Getting Eventhouse '$EventhouseId' definition request accepted. Retrieving in progress!" -Level Debug
-
+                Write-Message -Message "Warehouse '$WarehouseName' creation accepted. Provisioning in progress!" -Level Info
+               
                 [string]$operationId = $responseHeader["x-ms-operation-id"]
                 [string]$location = $responseHeader["Location"]
                 [string]$retryAfter = $responseHeader["Retry-After"] 
@@ -98,7 +105,7 @@ function Get-FabricEventhouseDefinition {
                     $operationResult = Get-FabricLongRunningOperationResult -operationId $operationId, -location $location
                     Write-Message -Message "Long Running Operation status: $operationResult" -Level Debug
                 
-                    return $operationResult.definition.parts
+                    return $operationResult
                 }
                 else {
                     Write-Message -Message "Operation Failed" -Level Debug
@@ -115,9 +122,8 @@ function Get-FabricEventhouseDefinition {
         }
     }
     catch {
-        # Step 9: Capture and log error details
+        # Step 6: Handle and log errors
         $errorDetails = $_.Exception.Message
-        Write-Message -Message "Failed to retrieve Eventhouse. Error: $errorDetails" -Level Error
-    } 
- 
+        Write-Message -Message "Failed to create Warehouse. Error: $errorDetails" -Level Error
+    }
 }

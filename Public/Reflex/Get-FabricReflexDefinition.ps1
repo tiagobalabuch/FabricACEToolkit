@@ -1,27 +1,27 @@
 <#
 .SYNOPSIS
-    Retrieves the definition of an Eventhouse from a specified Microsoft Fabric workspace.
+    Retrieves the definition of an Reflex from a specified Microsoft Fabric workspace.
 
 .DESCRIPTION
-    This function retrieves the definition of an Eventhouse from a specified workspace using the provided EventhouseId.
+    This function retrieves the definition of an Reflex from a specified workspace using the provided ReflexId.
     It handles token validation, constructs the API URL, makes the API request, and processes the response.
 
 .PARAMETER WorkspaceId
-    The unique identifier of the workspace where the Eventhouse exists. This parameter is mandatory.
+    The unique identifier of the workspace where the Reflex exists. This parameter is mandatory.
 
-.PARAMETER EventhouseId
-    The unique identifier of the Eventhouse to retrieve the definition for. This parameter is optional.
+.PARAMETER ReflexId
+    The unique identifier of the Reflex to retrieve the definition for. This parameter is optional.
 
-.PARAMETER EventhouseFormat
-    The format in which to retrieve the Eventhouse definition. This parameter is optional.
-
-.EXAMPLE
-    PS C:\> Get-FabricEventhouseDefinition -WorkspaceId "workspace-12345" -EventhouseId "eventhouse-67890"
-    This example retrieves the definition of the Eventhouse with ID "eventhouse-67890" in the workspace with ID "workspace-12345".
+.PARAMETER ReflexFormat
+    The format in which to retrieve the Reflex definition. This parameter is optional.
 
 .EXAMPLE
-    PS C:\> Get-FabricEventhouseDefinition -WorkspaceId "workspace-12345" -EventhouseId "eventhouse-67890" -EventhouseFormat "json"
-    This example retrieves the definition of the Eventhouse with ID "eventhouse-67890" in the workspace with ID "workspace-12345" in JSON format.
+    PS C:\> Get-FabricReflexDefinition -WorkspaceId "workspace-12345" -ReflexId "Reflex-67890"
+    This example retrieves the definition of the Reflex with ID "Reflex-67890" in the workspace with ID "workspace-12345".
+
+.EXAMPLE
+    PS C:\> Get-FabricReflexDefinition -WorkspaceId "workspace-12345" -ReflexId "Reflex-67890" -ReflexFormat "json"
+    This example retrieves the definition of the Reflex with ID "Reflex-67890" in the workspace with ID "workspace-12345" in JSON format.
 
 .NOTES
     - Requires `$FabricConfig` global configuration, including `BaseUrl` and `FabricHeaders`.
@@ -30,7 +30,7 @@
     Author: Tiago Balabuch
     Date: 2024-12-15
 #>
-function Get-FabricEventhouseDefinition {
+function Get-FabricReflexDefinition {
     [CmdletBinding()]
     param (
         [Parameter(Mandatory = $true)]
@@ -39,11 +39,11 @@ function Get-FabricEventhouseDefinition {
 
         [Parameter(Mandatory = $false)]
         [ValidateNotNullOrEmpty()]
-        [string]$EventhouseId,
+        [string]$ReflexId,
 
         [Parameter(Mandatory = $false)]
         [ValidateNotNullOrEmpty()]
-        [string]$EventhouseFormat
+        [string]$ReflexFormat
     )
     try {
         # Step 2: Ensure token validity
@@ -52,10 +52,10 @@ function Get-FabricEventhouseDefinition {
         Write-Message -Message "Token validation completed." -Level Debug
 
         # Step 3: Construct the API URL
-        $apiEndpointUrl = "{0}/workspaces/{1}/eventhouses/{2}/getDefinition" -f $FabricConfig.BaseUrl, $WorkspaceId, $EventhouseId
+        $apiEndpointUrl = "{0}/workspaces/{1}/reflexes/{2}/getDefinition" -f $FabricConfig.BaseUrl, $WorkspaceId, $ReflexId
         
-        if ($EventhouseFormat) {
-            $apiEndpointUrl = "{0}?format={1}" -f $apiEndpointUrl, $EventhouseFormat
+        if ($ReflexFormat) {
+            $apiEndpointUrl = "{0}?format={1}" -f $apiEndpointUrl, $ReflexFormat
         }
         
         Write-Message -Message "API Endpoint: $apiEndpointUrl" -Level Debug
@@ -72,12 +72,12 @@ function Get-FabricEventhouseDefinition {
         # Step 5: Validate the response code and handle the response
         switch ($statusCode) {
             200 {
-                Write-Message -Message "Eventhouse '$EventhouseId' definition retrieved successfully!" -Level Debug
+                Write-Message -Message "Reflex '$ReflexId' definition retrieved successfully!" -Level Debug
                 return $response
             }
             202 {
 
-                Write-Message -Message "Getting Eventhouse '$EventhouseId' definition request accepted. Retrieving in progress!" -Level Debug
+                Write-Message -Message "Getting Reflex '$ReflexId' definition request accepted. Retrieving in progress!" -Level Debug
 
                 [string]$operationId = $responseHeader["x-ms-operation-id"]
                 [string]$location = $responseHeader["Location"]
@@ -117,7 +117,7 @@ function Get-FabricEventhouseDefinition {
     catch {
         # Step 9: Capture and log error details
         $errorDetails = $_.Exception.Message
-        Write-Message -Message "Failed to retrieve Eventhouse. Error: $errorDetails" -Level Error
+        Write-Message -Message "Failed to retrieve Reflex. Error: $errorDetails" -Level Error
     } 
  
 }

@@ -35,7 +35,7 @@ function Add-SparkPropertiesToJson {
   function test-EnvSpark {
     [CmdletBinding()]
     param (
-        [Parameter(Mandatory = $false)]
+        [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
         [string]$WorkspaceId,   
         
@@ -135,7 +135,7 @@ function Test-EnvSpark2 {
     [CmdletBinding()]
     param (
         # Optional: Workspace ID
-        [Parameter(Mandatory = $false)]
+        [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
         [string]$WorkspaceId,
         

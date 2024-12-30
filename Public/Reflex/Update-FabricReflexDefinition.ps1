@@ -1,26 +1,26 @@
 <#
 .SYNOPSIS
-    Updates the definition of an existing Eventhouse in a specified Microsoft Fabric workspace.
+    Updates the definition of an existing Reflex in a specified Microsoft Fabric workspace.
 
 .DESCRIPTION
-    This function sends a PATCH request to the Microsoft Fabric API to update the definition of an existing Eventhouse 
-    in the specified workspace. It supports optional parameters for Eventhouse definition and platform-specific definition.
+    This function sends a PATCH request to the Microsoft Fabric API to update the definition of an existing Reflex 
+    in the specified workspace. It supports optional parameters for Reflex definition and platform-specific definition.
 
 .PARAMETER WorkspaceId
-    The unique identifier of the workspace where the Eventhouse exists. This parameter is mandatory.
+    The unique identifier of the workspace where the Reflex exists. This parameter is mandatory.
 
-.PARAMETER EventhouseId
-    The unique identifier of the Eventhouse to be updated. This parameter is mandatory.
+.PARAMETER ReflexId
+    The unique identifier of the Reflex to be updated. This parameter is mandatory.
 
-.PARAMETER EventhousePathDefinition
-    An optional path to the Eventhouse definition file to upload.
+.PARAMETER ReflexPathDefinition
+    An optional path to the Reflex definition file to upload.
 
-.PARAMETER EventhousePathPlatformDefinition
+.PARAMETER ReflexPathPlatformDefinition
     An optional path to the platform-specific definition file to upload.
 
 .EXAMPLE
-    PS C:\> Update-FabricEventhouseDefinition -WorkspaceId "workspace-12345" -EventhouseId "eventhouse-67890" -EventhousePathDefinition "C:\Path\To\EventhouseDefinition.json"
-    This example updates the definition of the Eventhouse with ID "eventhouse-67890" in the workspace with ID "workspace-12345" using the provided definition file.
+    PS C:\> Update-FabricReflexDefinition -WorkspaceId "workspace-12345" -ReflexId "Reflex-67890" -ReflexPathDefinition "C:\Path\To\ReflexDefinition.json"
+    This example updates the definition of the Reflex with ID "Reflex-67890" in the workspace with ID "workspace-12345" using the provided definition file.
 
 .NOTES
     - Requires `$FabricConfig` global configuration, including `BaseUrl` and `FabricHeaders`.
@@ -29,7 +29,7 @@
     Author: Tiago Balabuch
     Date: 2024-12-15
 #>
-function Update-FabricEventhouseDefinition {
+function Update-FabricReflexDefinition {
     [CmdletBinding()]
     param (
         [Parameter(Mandatory = $true)]
@@ -38,15 +38,15 @@ function Update-FabricEventhouseDefinition {
 
         [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
-        [string]$EventhouseId,
+        [string]$ReflexId,
 
         [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
-        [string]$EventhousePathDefinition,
+        [string]$ReflexPathDefinition,
         
         [Parameter(Mandatory = $false)]
         [ValidateNotNullOrEmpty()]
-        [string]$EventhousePathPlatformDefinition
+        [string]$ReflexPathPlatformDefinition
     )
     try {
         # Step 1: Ensure token validity
@@ -55,10 +55,10 @@ function Update-FabricEventhouseDefinition {
         Write-Message -Message "Token validation completed." -Level Debug
 
         # Step 2: Construct the API URL
-        $apiEndpointUrl = "{0}/workspaces/{1}/eventhouses/{2}/updateDefinition" -f $FabricConfig.BaseUrl, $WorkspaceId, $EventhouseId
+        $apiEndpointUrl = "{0}/workspaces/{1}/reflexes/{2}/updateDefinition" -f $FabricConfig.BaseUrl, $WorkspaceId, $ReflexId
 
         #if ($UpdateMetadata -eq $true) {
-        if($EventhousePathPlatformDefinition){
+        if($ReflexPathPlatformDefinition){
             $apiEndpointUrl = "?updateMetadata=true" -f $apiEndpointUrl 
         }
         Write-Message -Message "API Endpoint: $apiEndpointUrl" -Level Debug
@@ -70,30 +70,30 @@ function Update-FabricEventhouseDefinition {
             } 
         }
       
-        if ($EventhousePathDefinition) {
-            $EventhouseEncodedContent = Encode-ToBase64 -filePath $EventhousePathDefinition
+        if ($ReflexPathDefinition) {
+            $ReflexEncodedContent = Encode-ToBase64 -filePath $ReflexPathDefinition
             
-            if (-not [string]::IsNullOrEmpty($EventhouseEncodedContent)) {
+            if (-not [string]::IsNullOrEmpty($ReflexEncodedContent)) {
                 # Add new part to the parts array
                 $body.definition.parts += @{
-                    path        = "EventhouseProperties.json"
-                    payload     = $EventhouseEncodedContent
+                    path        = "ReflexEntities.json"
+                    payload     = $ReflexEncodedContent
                     payloadType = "InlineBase64"
                 }
             }
             else {
-                Write-Message -Message "Invalid or empty content in Eventhouse definition." -Level Error
+                Write-Message -Message "Invalid or empty content in Reflex definition." -Level Error
                 return $null
             }
         }
 
-        if ($EventhousePathPlatformDefinition) {
-            $EventhouseEncodedPlatformContent = Encode-ToBase64 -filePath $EventhousePathPlatformDefinition
-            if (-not [string]::IsNullOrEmpty($EventhouseEncodedPlatformContent)) {
+        if ($ReflexPathPlatformDefinition) {
+            $ReflexEncodedPlatformContent = Encode-ToBase64 -filePath $ReflexPathPlatformDefinition
+            if (-not [string]::IsNullOrEmpty($ReflexEncodedPlatformContent)) {
                 # Add new part to the parts array
                 $body.definition.parts += @{
                     path        = ".platform"
-                    payload     = $EventhouseEncodedPlatformContent
+                    payload     = $ReflexEncodedPlatformContent
                     payloadType = "InlineBase64"
                 }
             }
@@ -120,11 +120,11 @@ function Update-FabricEventhouseDefinition {
         # Step 5: Handle and log the response
         switch ($statusCode) {
             200 {
-                Write-Message -Message "Update definition for Eventhouse '$EventhouseId' created successfully!" -Level Info
+                Write-Message -Message "Update definition for Reflex '$ReflexId' created successfully!" -Level Info
                 return $response
             }
             202 {
-                Write-Message -Message "Update definition for Eventhouse '$EventhouseId' accepted. Operation in progress!" -Level Info
+                Write-Message -Message "Update definition for Reflex '$ReflexId' accepted. Operation in progress!" -Level Info
                 
                 [string]$operationId = $responseHeader["x-ms-operation-id"]
                 [string]$location = $responseHeader["Location"]
@@ -162,6 +162,6 @@ function Update-FabricEventhouseDefinition {
     catch {
         # Step 6: Handle and log errors
         $errorDetails = $_.Exception.Message
-        Write-Message -Message "Failed to update Eventhouse. Error: $errorDetails" -Level Error
+        Write-Message -Message "Failed to update Reflex. Error: $errorDetails" -Level Error
     }
 }

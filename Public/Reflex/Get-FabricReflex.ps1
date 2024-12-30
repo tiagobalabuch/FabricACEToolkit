@@ -1,27 +1,27 @@
 <#
 .SYNOPSIS
-    Retrieves Eventhouse details from a specified Microsoft Fabric workspace.
+    Retrieves Reflex details from a specified Microsoft Fabric workspace.
 
 .DESCRIPTION
-    This function retrieves Eventhouse details from a specified workspace using either the provided EventhouseId or EventhouseName.
+    This function retrieves Reflex details from a specified workspace using either the provided ReflexId or ReflexName.
     It handles token validation, constructs the API URL, makes the API request, and processes the response.
 
 .PARAMETER WorkspaceId
-    The unique identifier of the workspace where the Eventhouse exists. This parameter is mandatory.
+    The unique identifier of the workspace where the Reflex exists. This parameter is mandatory.
 
-.PARAMETER EventhouseId
-    The unique identifier of the Eventhouse to retrieve. This parameter is optional.
+.PARAMETER ReflexId
+    The unique identifier of the Reflex to retrieve. This parameter is optional.
 
-.PARAMETER EventhouseName
-    The name of the Eventhouse to retrieve. This parameter is optional.
-
-.EXAMPLE
-    PS C:\> Get-FabricEventhouse -WorkspaceId "workspace-12345" -EventhouseId "eventhouse-67890"
-    This example retrieves the Eventhouse details for the Eventhouse with ID "eventhouse-67890" in the workspace with ID "workspace-12345".
+.PARAMETER ReflexName
+    The name of the Reflex to retrieve. This parameter is optional.
 
 .EXAMPLE
-    PS C:\> Get-FabricEventhouse -WorkspaceId "workspace-12345" -EventhouseName "My Eventhouse"
-    This example retrieves the Eventhouse details for the Eventhouse named "My Eventhouse" in the workspace with ID "workspace-12345".
+    PS C:\> Get-FabricReflex -WorkspaceId "workspace-12345" -ReflexId "Reflex-67890"
+    This example retrieves the Reflex details for the Reflex with ID "Reflex-67890" in the workspace with ID "workspace-12345".
+
+.EXAMPLE
+    PS C:\> Get-FabricReflex -WorkspaceId "workspace-12345" -ReflexName "My Reflex"
+    This example retrieves the Reflex details for the Reflex named "My Reflex" in the workspace with ID "workspace-12345".
 
 .NOTES
     - Requires `$FabricConfig` global configuration, including `BaseUrl` and `FabricHeaders`.
@@ -30,7 +30,7 @@
     Author: Tiago Balabuch
     Date: 2024-12-15
 #>
-function Get-FabricEventhouse {
+function Get-FabricReflex {
     [CmdletBinding()]
     param (
         [Parameter(Mandatory = $true)]
@@ -39,18 +39,18 @@ function Get-FabricEventhouse {
 
         [Parameter(Mandatory = $false)]
         [ValidateNotNullOrEmpty()]
-        [string]$EventhouseId,
+        [string]$ReflexId,
 
         [Parameter(Mandatory = $false)]
         [ValidateNotNullOrEmpty()]
         [ValidatePattern('^[a-zA-Z0-9_ ]*$')]
-        [string]$EventhouseName
+        [string]$ReflexName
     )
     try {
 
         # Step 1: Handle ambiguous input
-        if ($EventhouseId -and $EventhouseName) {
-            Write-Message -Message "Both 'EventhouseId' and 'EventhouseName' were provided. Please specify only one." -Level Error
+        if ($ReflexId -and $ReflexName) {
+            Write-Message -Message "Both 'ReflexId' and 'ReflexName' were provided. Please specify only one." -Level Error
             return $null
         }
 
@@ -61,7 +61,7 @@ function Get-FabricEventhouse {
         
         # Step 3: Initialize variables
         $continuationToken = $null
-        $eventhouses = @()
+        $Reflexes = @()
   
         if (-not ([AppDomain]::CurrentDomain.GetAssemblies() | Where-Object { $_.GetName().Name -eq "System.Web" })) {
             Add-Type -AssemblyName System.Web
@@ -69,7 +69,7 @@ function Get-FabricEventhouse {
  
         # Step 4: Loop to retrieve all capacities with continuation token
         Write-Message -Message "Loop started to get continuation token" -Level Debug
-        $baseApiEndpointUrl = "{0}/workspaces/{1}/eventhouses" -f $FabricConfig.BaseUrl, $WorkspaceId
+        $baseApiEndpointUrl = "{0}/workspaces/{1}/reflexes" -f $FabricConfig.BaseUrl, $WorkspaceId
         # Step 3:  Loop to retrieve data with continuation token
         do {
             # Step 5: Construct the API URL
@@ -104,7 +104,7 @@ function Get-FabricEventhouse {
             # Step 8: Add data to the list
             if ($null -ne $response) {
                 Write-Message -Message "Adding data to the list" -Level Debug
-                $eventhouses += $response.value
+                $Reflexes += $response.value
     
                 # Update the continuation token if present
                 if ($response.PSObject.Properties.Match("continuationToken")) {
@@ -125,32 +125,32 @@ function Get-FabricEventhouse {
         Write-Message -Message "Loop finished and all data added to the list" -Level Debug
        
         # Step 8: Filter results based on provided parameters
-        $eventhouse = if ($EventhouseId) {
-            $eventhouses | Where-Object { $_.Id -eq $EventhouseId }
+        $Reflex = if ($ReflexId) {
+            $Reflexes | Where-Object { $_.Id -eq $ReflexId }
         }
-        elseif ($EventhouseName) {
-            $eventhouses | Where-Object { $_.DisplayName -eq $EventhouseName }
+        elseif ($ReflexName) {
+            $Reflexes | Where-Object { $_.DisplayName -eq $ReflexName }
         }
         else {
-            # Return all eventhouses if no filter is provided
-            Write-Message -Message "No filter provided. Returning all Eventhouses." -Level Debug
-            $eventhouses
+            # Return all Reflexes if no filter is provided
+            Write-Message -Message "No filter provided. Returning all Reflexes." -Level Debug
+            $Reflexes
         }
 
         # Step 9: Handle results
-        if ($eventhouse) {
-            Write-Message -Message "Eventhouse found in the Workspace '$WorkspaceId'." -Level Debug
-            return $eventhouse
+        if ($Reflex) {
+            Write-Message -Message "Reflex found in the Workspace '$WorkspaceId'." -Level Debug
+            return $Reflex
         }
         else {
-            Write-Message -Message "No Eventhouse found matching the provided criteria." -Level Warning
+            Write-Message -Message "No Reflex found matching the provided criteria." -Level Warning
             return $null
         }
     }
     catch {
         # Step 10: Capture and log error details
         $errorDetails = $_.Exception.Message
-        Write-Message -Message "Failed to retrieve Eventhouse. Error: $errorDetails" -Level Error
+        Write-Message -Message "Failed to retrieve Reflex. Error: $errorDetails" -Level Error
     } 
  
 }

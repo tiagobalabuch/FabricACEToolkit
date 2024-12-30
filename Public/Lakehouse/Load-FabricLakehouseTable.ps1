@@ -1,7 +1,7 @@
 function Load-FabricLakehouseTable {
     [CmdletBinding()]
     param (
-        [Parameter(Mandatory = $false)]
+        [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
         [string]$WorkspaceId,   
         

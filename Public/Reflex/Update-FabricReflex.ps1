@@ -1,26 +1,26 @@
 <#
 .SYNOPSIS
-    Updates an existing ML Model in a specified Microsoft Fabric workspace.
+    Updates an existing Reflex in a specified Microsoft Fabric workspace.
 
 .DESCRIPTION
-    This function sends a PATCH request to the Microsoft Fabric API to update an existing ML Model 
-    in the specified workspace. It supports optional parameters for ML Model description.
+    This function sends a PATCH request to the Microsoft Fabric API to update an existing Reflex 
+    in the specified workspace. It supports optional parameters for Reflex description.
 
 .PARAMETER WorkspaceId
-    The unique identifier of the workspace where the ML Model exists. This parameter is optional.
+    The unique identifier of the workspace where the Reflex exists. This parameter is optional.
 
-.PARAMETER MLModelId
-    The unique identifier of the ML Model to be updated. This parameter is mandatory.
+.PARAMETER ReflexId
+    The unique identifier of the Reflex to be updated. This parameter is mandatory.
 
-.PARAMETER MLModelName
-    The new name of the ML Model. This parameter is mandatory.
+.PARAMETER ReflexName
+    The new name of the Reflex. This parameter is mandatory.
 
-.PARAMETER MLModelDescription
-    An optional new description for the ML Model.
+.PARAMETER ReflexDescription
+    An optional new description for the Reflex.
 
 .EXAMPLE
-    PS C:\> Update-FabricMLModel -WorkspaceId "workspace-12345" -MLModelId "model-67890" -MLModelName "Updated ML Model" -MLModelDescription "Updated description"
-    This example updates the ML Model with ID "model-67890" in the workspace with ID "workspace-12345" with a new name and description.
+    PS C:\> Update-FabricReflex -WorkspaceId "workspace-12345" -ReflexId "Reflex-67890" -ReflexName "Updated Reflex" -ReflexDescription "Updated description"
+    This example updates the Reflex with ID "Reflex-67890" in the workspace with ID "workspace-12345" with a new name and description.
 
 .NOTES
     - Requires `$FabricConfig` global configuration, including `BaseUrl` and `FabricHeaders`.
@@ -29,7 +29,7 @@
     Author: Tiago Balabuch
     Date: 2024-12-15
 #>
-function Update-FabricMLModel {
+function Update-FabricReflex {
     [CmdletBinding()]
     param (
         [Parameter(Mandatory = $true)]
@@ -38,18 +38,17 @@ function Update-FabricMLModel {
         
         [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
-        [string]$MLModelId,
+        [string]$ReflexId,
 
         [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
         [ValidatePattern('^[a-zA-Z0-9_ ]*$')]
-        [string]$MLModelName,
+        [string]$ReflexName,
 
         [Parameter(Mandatory = $false)]
         [ValidateNotNullOrEmpty()]
-        [string]$MLModelDescription
+        [string]$ReflexDescription
     )
-
     try {
         # Step 1: Ensure token validity
         Write-Message -Message "Validating token..." -Level Debug
@@ -57,16 +56,16 @@ function Update-FabricMLModel {
         Write-Message -Message "Token validation completed." -Level Debug
 
         # Step 2: Construct the API URL
-        $apiEndpointUrl = "{0}/workspaces/{1}/MLModels/{2}" -f $FabricConfig.BaseUrl, $WorkspaceId, $MLModelId
+        $apiEndpointUrl = "{0}/workspaces/{1}/reflexes/{2}" -f $FabricConfig.BaseUrl, $WorkspaceId, $ReflexId
         Write-Message -Message "API Endpoint: $apiEndpointUrl" -Level Debug
 
         # Step 3: Construct the request body
         $body = @{
-            displayName = $MLModelName
+            displayName = $ReflexName
         }
 
-        if ($MLModelDescription) {
-            $body.description = $MLModelDescription
+        if ($ReflexDescription) {
+            $body.description = $ReflexDescription
         }
 
         # Convert the body to JSON
@@ -82,6 +81,7 @@ function Update-FabricMLModel {
             -ContentType "application/json" `
             -ErrorAction Stop `
             -SkipHttpErrorCheck `
+            -ResponseHeadersVariable "responseHeader" `
             -StatusCodeVariable "statusCode"
 
         # Step 5: Validate the response code
@@ -94,12 +94,12 @@ function Update-FabricMLModel {
         }
 
         # Step 6: Handle results
-        Write-Message -Message "ML Model '$MLModelName' updated successfully!" -Level Info
+        Write-Message -Message "Reflex '$ReflexName' updated successfully!" -Level Info
         return $response
     }
     catch {
         # Step 7: Handle and log errors
         $errorDetails = $_.Exception.Message
-        Write-Message -Message "Failed to update ML Model. Error: $errorDetails" -Level Error
+        Write-Message -Message "Failed to update Reflex. Error: $errorDetails" -Level Error
     }
 }

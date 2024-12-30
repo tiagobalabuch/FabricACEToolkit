@@ -1,41 +1,38 @@
 <#
 .SYNOPSIS
-Updates the properties of a Fabric Eventhouse.
+    Updates an existing Eventhouse in a specified Microsoft Fabric workspace.
 
 .DESCRIPTION
-The `Update-FabricEventhouse` function updates the name and/or description of a specified Fabric Eventhouse by making a PATCH request to the API.
+    This function sends a PATCH request to the Microsoft Fabric API to update an existing Eventhouse 
+    in the specified workspace. It supports optional parameters for Eventhouse description.
+
+.PARAMETER WorkspaceId
+    The unique identifier of the workspace where the Eventhouse exists. This parameter is optional.
 
 .PARAMETER EventhouseId
-The unique identifier of the Eventhouse to be updated.
+    The unique identifier of the Eventhouse to be updated. This parameter is mandatory.
 
 .PARAMETER EventhouseName
-The new name for the Eventhouse.
+    The new name of the Eventhouse. This parameter is mandatory.
 
 .PARAMETER EventhouseDescription
-(Optional) The new description for the Eventhouse.
+    An optional new description for the Eventhouse.
 
 .EXAMPLE
-Update-FabricEventhouse -EventhouseId "Eventhouse123" -EventhouseName "NewEventhouseName"
-
-Updates the name of the Eventhouse with the ID "Eventhouse123" to "NewEventhouseName".
-
-.EXAMPLE
-Update-FabricEventhouse -EventhouseId "Eventhouse123" -EventhouseName "NewName" -EventhouseDescription "Updated description"
-
-Updates both the name and description of the Eventhouse "Eventhouse123".
+    PS C:\> Update-FabricEventhouse -WorkspaceId "workspace-12345" -EventhouseId "eventhouse-67890" -EventhouseName "Updated Eventhouse" -EventhouseDescription "Updated description"
+    This example updates the Eventhouse with ID "eventhouse-67890" in the workspace with ID "workspace-12345" with a new name and description.
 
 .NOTES
-- Requires `$FabricConfig` global configuration, including `BaseUrl` and `FabricHeaders`.
-- Calls `Test-TokenExpired` to ensure token validity before making the API request.
+    - Requires `$FabricConfig` global configuration, including `BaseUrl` and `FabricHeaders`.
+    - Calls `Test-TokenExpired` to ensure token validity before making the API request.
 
-Author: Tiago Balabuch  
-Date: 2024-12-14
+    Author: Tiago Balabuch
+    Date: 2024-12-15
 #>
-
 function Update-FabricEventhouse {
     [CmdletBinding()]
     param (
-        [Parameter(Mandatory = $false)]
+        [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
         [string]$WorkspaceId,   
         
@@ -52,7 +49,6 @@ function Update-FabricEventhouse {
         [ValidateNotNullOrEmpty()]
         [string]$EventhouseDescription
     )
-
     try {
         # Step 1: Ensure token validity
         Write-Message -Message "Validating token..." -Level Debug
@@ -92,6 +88,7 @@ function Update-FabricEventhouse {
         if ($statusCode -ne 200) {
             Write-Message -Message "Unexpected response code: $statusCode from the API." -Level Error
             Write-Message -Message "Error: $($response.message)" -Level Error
+            Write-Message -Message "Error Details: $($response.moreDetails)" -Level Error
             Write-Message "Error Code: $($response.errorCode)" -Level Error
             return $null
         }

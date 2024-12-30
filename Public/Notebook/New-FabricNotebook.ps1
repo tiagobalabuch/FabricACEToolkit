@@ -152,10 +152,15 @@ function New-FabricNotebook {
                 Write-Message -Message "Notebook '$NotebookName' creation accepted. Provisioning in progress!" -Level Info
                
                 [string]$operationId = $responseHeader["x-ms-operation-id"]
+                [string]$location = $responseHeader["Location"]
+                [string]$retryAfter = $responseHeader["Retry-After"] 
+
                 Write-Message -Message "Operation ID: '$operationId'" -Level Debug
+                Write-Message -Message "Location: '$location'" -Level Debug
+                Write-Message -Message "Retry-After: '$retryAfter'" -Level Debug
                 Write-Message -Message "Getting Long Running Operation status" -Level Debug
                
-                $operationStatus = Get-FabricLongRunningOperation -operationId $operationId
+                $operationStatus = Get-FabricLongRunningOperation -operationId $operationId -location $location
                 Write-Message -Message "Long Running Operation status: $operationStatus" -Level Debug
                 # Handle operation result
                 if ($operationStatus.status -eq "Succeeded") {
@@ -166,30 +171,11 @@ function New-FabricNotebook {
                     Write-Message -Message "Long Running Operation status: $operationResult" -Level Debug
                 
                     return $operationResult
-                 
-                    <#   $operationResultUrl = "https://api.fabric.microsoft.com/v1/operations/{0}/result" -f $operationId
-
-                    # Fetch the operation result
-                    $resultResponse = Invoke-RestMethod `
-                        -Headers $FabricConfig.FabricHeaders `
-                        -Uri $operationResultUrl `
-                        -Method Get `
-                        -ErrorAction Stop
-                    # Return the result
-                    #return $resultResponse.definition.parts
-                    Write-Message -Message "Result return: $resultResponse" -Level Debug
-                    
-                    #$customObject = Get-FabricNotebook -WorkspaceId $WorkspaceId -NotebookName $NotebookName
-
-                    #$customObject | Add-Member -NotePropertyName definition -NotePropertyValue $resultResponse.definition
-
-                    return $resultResponse
-#>
-                }
+                } 
                 else {
                     Write-Message -Message "Operation Failed" -Level Debug
                     return $operationStatus
-                }   
+                } 
             }
             default {
                 Write-Message -Message "Unexpected response code: $statusCode" -Level Error

@@ -87,33 +87,26 @@ function Get-FabricNotebookDefinition {
                 Write-Message -Message "Getting notebook '$NotebookId' definition request accepted. Retrieving in progress!" -Level Debug
 
                 [string]$operationId = $responseHeader["x-ms-operation-id"]
+                [string]$location = $responseHeader["Location"]
+                [string]$retryAfter = $responseHeader["Retry-After"] 
+
                 Write-Message -Message "Operation ID: '$operationId'" -Level Debug
+                Write-Message -Message "Location: '$location'" -Level Debug
+                Write-Message -Message "Retry-After: '$retryAfter'" -Level Debug
                 Write-Message -Message "Getting Long Running Operation status" -Level Debug
                
-                $operationStatus = Get-FabricLongRunningOperation -operationId $operationId
+                $operationStatus = Get-FabricLongRunningOperation -operationId $operationId -location $location
                 Write-Message -Message "Long Running Operation status: $operationStatus" -Level Debug
+
                 # Handle operation result
                 if ($operationStatus.status -eq "Succeeded") {
                     Write-Message -Message "Operation Succeeded" -Level Debug
                     Write-Message -Message "Getting Long Running Operation result" -Level Debug
                 
-                    $operationResult = Get-FabricLongRunningOperationResult -operationId $operationId
+                    $operationResult = Get-FabricLongRunningOperationResult -operationId $operationId -location $location
                     Write-Message -Message "Long Running Operation status: $operationResult" -Level Debug
                 
                     return $operationResult.definition.parts
-
-                    <#
-                    $operationResultUrl = "https://api.fabric.microsoft.com/v1/operations/{0}/result" -f $operationId
-
-                    # Fetch the operation result
-                    $resultResponse = Invoke-RestMethod `
-                        -Headers $FabricConfig.FabricHeaders `
-                        -Uri $operationResultUrl `
-                        -Method Get `
-                        -ErrorAction Stop
-                    # Return the result
-                    return $resultResponse.definition.parts#>
-
                 }
                 else {
                     Write-Message -Message "Operation Failed" -Level Debug

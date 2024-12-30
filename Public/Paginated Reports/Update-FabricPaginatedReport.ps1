@@ -32,7 +32,7 @@
 function Update-FabricPaginatedReport {
     [CmdletBinding()]
     param (
-        [Parameter(Mandatory = $false)]
+        [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
         [string]$WorkspaceId,   
         
