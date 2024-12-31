@@ -7,144 +7,14 @@ Set-FabricHeaders -tenantId "2ca1a04f-621b-4a1f-bad6-7ecd3ae78e25"
 
 $a = Get-Command -Module FabricACEToolkit 
 $a.Count
-
-# KQL Database
-## Get KQL Database
 $workspace = Get-FabricWorkspace -WorkspaceName "Tiago API"
-Get-FabricKQLDatabase -WorkspaceId $workspace.id -Debug
-Get-FabricKQLDatabase -WorkspaceId $workspace.id -KQLDatabaseName "EH02" -Debug
-Get-FabricKQLDatabase -WorkspaceId $workspace.id -KQLDatabaseId "ea5c8259-389d-4d1d-b9d6-449e075fa315" -Debug
-
-## add KQL Database
-$workspace = Get-FabricWorkspace -WorkspaceName "Tiago API"
-$eventhouse = Get-FabricEventhouse -WorkspaceId $workspace.id -EventhouseName "EH01"
-## Create a ReadWrite KQL database example
-New-FabricKQLDatabase -WorkspaceId $workspace.id -KQLDatabaseName "MyKQL2" -KQLDatabaseDescription "KQL Database Description" -KQLDatabaseType ReadWrite -parentEventhouseId $eventhouse.id -Debug
-
-################### 
-## need to test
-
-#Create a Shortcut KQL database to source KQL database example
-$KQLDatabaseName = "TiagoKQL"
-$KQLDatabaseType = "Shortcut"
-$parentEventhouseId = "0000000"
-$KQLSourceDatabaseName = "SourceTiagoKQL"
-
-# Create a Shortcut KQL database to source Azure Data Explorer cluster example
-$KQLDatabaseName = "TiagoKQL"
-$KQLDatabaseType = "Shortcut"
-$parentEventhouseId = "0000000"
-$KQLSourceDatabaseName = "SourceTiagoKQL"
-$KQLSourceClusterUri = "https://tiagokql.westus.kusto.windows.net"
-
-
-# Create a Shortcut KQL database to source Azure Data Explorer cluster with invitation token example
-$KQLDatabaseName = "TiagoKQL"
-$KQLDatabaseType = "Shortcut"
-$parentEventhouseId = "0000000"
-$KQLInvitationToken = "1234567890"
-$KQLSourceDatabaseName = "SourceTiagoKQL"
-$KQLSourceClusterUri = "https://tiagokql.westus.kusto.windows.net"
-###################
-
-## update KQL Database
-$workspace = Get-FabricWorkspace -WorkspaceName "Tiago API"
-$kqlDatabase = Get-FabricKQLDatabase -WorkspaceId $workspace.id -KQLDatabaseName "MyKQL2"
-Update-FabricKQLDatabase -WorkspaceId $workspace.id -KQLDatabaseId $kqlDatabase.id -KQLDatabaseName "MyKQL2 Updated" -KQLDatabaseDescription "KQL Database Description Updated" -Debug
-
-## remove KQL Database
-$workspace = Get-FabricWorkspace -WorkspaceName "Tiago API"
-$kqlDatabase = Get-FabricKQLDatabase -WorkspaceId $workspace.id -KQLDatabaseName "MyKQL2 Updated"
-Remove-FabricKQLDatabase -WorkspaceId $workspace.id -KQLDatabaseId $kqlDatabase.id -Debug
-
-## Get KQL Database Definition
-$workspace = Get-FabricWorkspace -WorkspaceName "Tiago API"
-$kqlDatabase = Get-FabricKQLDatabase -WorkspaceId $workspace.id -KQLDatabaseName "MyKQL"
-Get-FabricKQLDatabaseDefinition -WorkspaceId $workspace.id -KQLDatabaseId $kqlDatabase.id -Debug
-
-
-New-FabricKQLDatabase `
--WorkspaceId "dda81258-3461-4135-b4db-71552064e50ac" `
--KQLSourceDatabaseName "Source DB"`
--KQLDatabaseDescription "KQL Database Description" `
--KQLDatabaseName "New KQLDatabase" `
--KQLDatabaseType Shortcut `
--parentEventhouseId "0000000" `
--KQLSourceClusterUri "https://sourcekql.westus.kusto.windows.net"  `
+New-FabricNotebookNEW `
+-WorkspaceId $workspace.id `
+-NotebookName "NewTest0000000001" `
+-NotebookDescription "Notebook Description" `
+-NotebookPathDefinition "C:\temp\API\Notebook"`
 -Debug
 
-New-FabricKQLDatabase `
--WorkspaceId "workspace-12345" `
--KQLDatabaseDescription "KQL Database Description" `
--KQLDatabaseName "New KQLDatabase" `
--KQLDatabaseType "Shortcut" `
--parentEventhouseId "0000000" `
--KQLSourceDatabaseName "SourceKQLDatabase" `
--KQLSourceClusterUri "https://sourcekql.westus.kusto.windows.net"  `
--KQLInvitationToken "798798789798789778979879798"
-
-
-#-KQLDatabasePathDefinition "C:\temp\API\KQLDatabase.json"
-#
-
-
-$KQLDatabaseName = $null
-$KQLDatabaseType = $null
-$parentEventhouseId = $null
-$KQLInvitationToken = $null
-$KQLSourceDatabaseName = $null
-$KQLSourceClusterUri = $null
-
-#Create a ReadWrite KQL database example
-$KQLDatabaseName = "TiagoKQL"
-$KQLDatabaseType = "ReadWrite"
-$parentEventhouseId = "0000000"
-
-#Create a Shortcut KQL database to source KQL database example
-$KQLDatabaseName = "TiagoKQL"
-$KQLDatabaseType = "Shortcut"
-$parentEventhouseId = "0000000"
-$KQLSourceDatabaseName = "SourceTiagoKQL"
-
-# Create a Shortcut KQL database to source Azure Data Explorer cluster example
-$KQLDatabaseName = "TiagoKQL"
-$KQLDatabaseType = "Shortcut"
-$parentEventhouseId = "0000000"
-$KQLSourceDatabaseName = "SourceTiagoKQL"
-$KQLSourceClusterUri = "https://tiagokql.westus.kusto.windows.net"
-
-
-# Create a Shortcut KQL database to source Azure Data Explorer cluster with invitation token example
-$KQLDatabaseName = "TiagoKQL"
-$KQLDatabaseType = "Shortcut"
-$parentEventhouseId = "0000000"
-$KQLInvitationToken = "1234567890"
-$KQLSourceDatabaseName = "SourceTiagoKQL"
-$KQLSourceClusterUri = "https://tiagokql.westus.kusto.windows.net"
-
-
-$workspace = New-FabricWorkspace -WorkspaceName "Tiago API 233" -WorkspaceDescription "API data workspace" -Debug
-Add-FabricWorkspaceIdentity -WorkspaceId $workspace.id -Debug
-
-
-$workspace = Get-FabricWorkspace -WorkspaceName "Tiago API"
-$lakehouse = Get-FabricLakehouse -WorkspaceId $workspace.id -LakehouseName "LH01"
-Start-FabricLakehouseTableMaintenance -WorkspaceId $workspace.id -LakehouseId $lakehouse.id -TableName "Table01" -waitForCompletion $true 
-
-$apiEndpointUrl ="https://api.fabric.microsoft.com/v1/workspaces/26cbd4ed-5920-4f2b-94ab-8e6ffbbdc48d/lakehouses/ec88cc2d-6306-429a-a73c-d2211bf06918/jobs/instances?jobType=TableMaintenance" 
-
-$response = Invoke-RestMethod `
-            -Headers $FabricConfig.FabricHeaders `
-            -Uri $apiEndpointUrl `
-            -Method Post `
-            -Body $bodyJson `
-            -ContentType "application/json" `
-            -ErrorAction Stop `
-            -SkipHttpErrorCheck `
-            -ResponseHeadersVariable "responseHeader" `
-            -StatusCodeVariable "statusCode"
-$response
-$responseHeader
 
 #################################################################
 # Capacity
@@ -473,6 +343,61 @@ $lakehouse = Get-FabricLakehouse -WorkspaceId $workspace.id -LakehouseName "LH01
 $lakehouse = Get-FabricLakehouse -WorkspaceId $workspace.id -LakehouseName "LH01"
 Load-FabricLakehouseTable -WorkspaceId $workspace.id -LakehouseId $lakehouse.id -TableName "Table04" -PathType File `
 -RelativePath "Files/test.csv" -FileFormat CSV -Mode append -CsvDelimiter "," -CsvHeader $true -Recursive $false -Debug
+
+
+# KQL Database
+## Get KQL Database
+$workspace = Get-FabricWorkspace -WorkspaceName "Tiago API"
+Get-FabricKQLDatabase -WorkspaceId $workspace.id -Debug
+Get-FabricKQLDatabase -WorkspaceId $workspace.id -KQLDatabaseName "EH02" -Debug
+Get-FabricKQLDatabase -WorkspaceId $workspace.id -KQLDatabaseId "ea5c8259-389d-4d1d-b9d6-449e075fa315" -Debug
+
+## add KQL Database
+$workspace = Get-FabricWorkspace -WorkspaceName "Tiago API"
+$eventhouse = Get-FabricEventhouse -WorkspaceId $workspace.id -EventhouseName "EH01"
+## Create a ReadWrite KQL database example
+New-FabricKQLDatabase -WorkspaceId $workspace.id -KQLDatabaseName "MyKQL2" -KQLDatabaseDescription "KQL Database Description" -KQLDatabaseType ReadWrite -parentEventhouseId $eventhouse.id -Debug
+
+################### 
+## need to test
+
+#Create a Shortcut KQL database to source KQL database example
+$KQLDatabaseName = "TiagoKQL"
+$KQLDatabaseType = "Shortcut"
+$parentEventhouseId = "0000000"
+$KQLSourceDatabaseName = "SourceTiagoKQL"
+
+# Create a Shortcut KQL database to source Azure Data Explorer cluster example
+$KQLDatabaseName = "TiagoKQL"
+$KQLDatabaseType = "Shortcut"
+$parentEventhouseId = "0000000"
+$KQLSourceDatabaseName = "SourceTiagoKQL"
+$KQLSourceClusterUri = "https://tiagokql.westus.kusto.windows.net"
+
+
+# Create a Shortcut KQL database to source Azure Data Explorer cluster with invitation token example
+$KQLDatabaseName = "TiagoKQL"
+$KQLDatabaseType = "Shortcut"
+$parentEventhouseId = "0000000"
+$KQLInvitationToken = "1234567890"
+$KQLSourceDatabaseName = "SourceTiagoKQL"
+$KQLSourceClusterUri = "https://tiagokql.westus.kusto.windows.net"
+###################
+
+## update KQL Database
+$workspace = Get-FabricWorkspace -WorkspaceName "Tiago API"
+$kqlDatabase = Get-FabricKQLDatabase -WorkspaceId $workspace.id -KQLDatabaseName "MyKQL2"
+Update-FabricKQLDatabase -WorkspaceId $workspace.id -KQLDatabaseId $kqlDatabase.id -KQLDatabaseName "MyKQL2 Updated" -KQLDatabaseDescription "KQL Database Description Updated" -Debug
+
+## remove KQL Database
+$workspace = Get-FabricWorkspace -WorkspaceName "Tiago API"
+$kqlDatabase = Get-FabricKQLDatabase -WorkspaceId $workspace.id -KQLDatabaseName "MyKQL2 Updated"
+Remove-FabricKQLDatabase -WorkspaceId $workspace.id -KQLDatabaseId $kqlDatabase.id -Debug
+
+## Get KQL Database Definition
+$workspace = Get-FabricWorkspace -WorkspaceName "Tiago API"
+$kqlDatabase = Get-FabricKQLDatabase -WorkspaceId $workspace.id -KQLDatabaseName "MyKQL"
+Get-FabricKQLDatabaseDefinition -WorkspaceId $workspace.id -KQLDatabaseId $kqlDatabase.id -Debug
 
 
 Load-FabricLakehouseTable `

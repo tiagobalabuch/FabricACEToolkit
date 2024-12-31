@@ -30,25 +30,25 @@
 Tiago Balabuch
 #>
 function Encode-ToBase64 {
+    [CmdletBinding()]
     param (
         [Parameter(Mandatory = $true)]
+        [ValidateNotNullOrEmpty()]
         [string]$filePath
     )
     try {
-        # Step 1: Read the file's contents into a byte array
-        if (-Not (Test-Path $filePath)) {
-            Write-Message -Message "The specified file does not exist: $filePath" -Level Error 
-            throw
-        }
         
-        # Step 1: Convert the input string to a byte array
+        # Step 1: Reading all the bytes from the file
         #$bytes = [System.Text.Encoding]::UTF8.GetBytes($InputString)
+        Write-Message -Message "Reading all the bytes from the file specified: $filePath" -Level Debug
         $fileBytes = [System.IO.File]::ReadAllBytes($filePath)
 
         # Step 2: Convert the byte array to Base64 string
+        Write-Message -Message "Convert the byte array to Base64 string" -Level Debug
         $base64String = [Convert]::ToBase64String($fileBytes)
 
         # Step 3: Return the encoded string
+        Write-Message -Message "Return the encoded string for the file: $filePath" -Level Debug
         return $base64String
     }
     catch {
