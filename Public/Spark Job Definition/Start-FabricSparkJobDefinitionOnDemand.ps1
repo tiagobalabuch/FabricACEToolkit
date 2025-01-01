@@ -1,6 +1,6 @@
 
 
-function Start-FabricLakehouseTableMaintenance {
+function Start-FabricSparkJobDefinitionOnDemand {
     [CmdletBinding()]
     param (
         [Parameter(Mandatory = $true)]
@@ -9,38 +9,12 @@ function Start-FabricLakehouseTableMaintenance {
 
         [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
-        [string]$LakehouseId,
+        [string]$SparkJobDefinitionId,
 
         [Parameter(Mandatory = $false)]
         [ValidateNotNullOrEmpty()]
-        [ValidateSet('TableMaintenance')]
-        [string]$JobType = "TableMaintenance",
-
-        [Parameter(Mandatory = $false)]
-        [ValidateNotNullOrEmpty()]
-        [string]$SchemaName,
-        
-        [Parameter(Mandatory = $false)]
-        [ValidateNotNullOrEmpty()]
-        [string]$TableName,
-        
-        [Parameter(Mandatory = $false)]
-        [ValidateNotNullOrEmpty()]
-        [bool]$IsVOrder,
-
-        [Parameter(Mandatory = $false)]
-        [ValidateNotNullOrEmpty()]
-        [array]$ColumnsZOrderBy,
-
-        [Parameter(Mandatory = $false)]
-        [ValidateNotNullOrEmpty()]
-        [ValidatePattern("^\d+:[0-1][0-9]|2[0-3]:[0-5][0-9]:[0-5][0-9]$")]
-        [array]$retentionPeriod,
-
-        [Parameter(Mandatory = $false)]
-        [ValidateNotNullOrEmpty()]
-        [bool]$waitForCompletion = $false
-        
+        [ValidateSet('sparkjob')]
+        [string]$JobType = "sparkjob"
     )
 
     try {
@@ -49,60 +23,15 @@ function Start-FabricLakehouseTableMaintenance {
         Test-TokenExpired
         Write-Message -Message "Token validation completed." -Level Debug
         
-        
-        $lakehouse = Get-FabricLakehouse -WorkspaceId $WorkspaceId -LakehouseId $LakehouseId   
-        if ($lakehouse.properties.PSObject.Properties['defaultSchema'] -and -not $SchemaName) {
-            Write-Error "The Lakehouse '$lakehouse.displayName' has schema enabled, but no schema name was provided. Please specify the 'SchemaName' parameter to proceed."
-            return
-        }
-        
-        
         # Step 2: Construct the API URL
-        $apiEndpointUrl = "{0}/workspaces/{1}/lakehouses/{2}/jobs/instances?jobType={3}" -f $FabricConfig.BaseUrl, $WorkspaceId , $LakehouseId, $JobType
+        $apiEndpointUrl = "{0}/workspaces/{1}/SparkJobDefinitions/{2}/jobs/instances?jobType={3}" -f $FabricConfig.BaseUrl, $WorkspaceId , $SparkJobDefinitionId, $JobType
         Write-Message -Message "API Endpoint: $apiEndpointUrl" -Level Debug
-
-        # Step 3: Construct the request body
-        $body = @{
-            executionData = @{
-                tableName        = $TableName
-                optimizeSettings = @{}
-            }
-        }
-        if ($lakehouse.properties.PSObject.Properties['defaultSchema'] -and $SchemaName) {
-            $body.executionData.schemaName = $SchemaName
-        }
-
-        if ($vOrder) {
-            $body.executionData.optimizeSettings.vOrder = $vOrder
-        }
-
-        if ($ColumnsZOrderBy) {
-            $body.executionData.optimizeSettings.zOrderBy = $ColumnsZOrderBy
-        }
-
-        if ($retentionPeriod) {
-
-            # Initialize definition if it doesn't exist
-            if (-not $body.executionData.vacuumSettings) {
-                $body.executionData = @{
-                    vacuumSettings = @{
-                        retentionPeriod = @()
-                    }
-                }    
-            }
-            $body.executionData.vacuumSettings.retentionPeriod = $retentionPeriod
-    
-        }
-            
-        $bodyJson = $body | ConvertTo-Json
-        Write-Message -Message "Request Body: $bodyJson" -Level Debug
 
         # Step 4: Make the API request
         $response = Invoke-RestMethod `
             -Headers $FabricConfig.FabricHeaders `
             -Uri $apiEndpointUrl `
             -Method Post `
-            -Body $bodyJson `
             -ContentType "application/json" `
             -ErrorAction Stop `
             -SkipHttpErrorCheck `
@@ -113,11 +42,11 @@ function Start-FabricLakehouseTableMaintenance {
         # Step 5: Handle and log the response
         switch ($statusCode) {
             201 {
-                Write-Message -Message "Table maintenance job successfully initiated for Lakehouse '$lakehouse.displayName'." -Level Info
+                Write-Message -Message "Spark Job Definition on demand successfully initiated for SparkJobDefinition '$SparkJobDefinition.displayName'." -Level Info
                 return $response
             }
             202 {
-                Write-Message -Message "Table maintenance job accepted and is now running in the background. Job execution is in progress." -Level Info
+                Write-Message -Message "Spark Job Definition on demand accepted and is now running in the background. Job execution is in progress." -Level Info
                 [string]$operationId = $responseHeader["x-ms-operation-id"]
                 [string]$location = $responseHeader["Location"]
                 [string]$retryAfter = $responseHeader["Retry-After"] 
@@ -154,6 +83,6 @@ function Start-FabricLakehouseTableMaintenance {
     catch {
         # Step 6: Handle and log errors
         $errorDetails = $_.Exception.Message
-        Write-Message -Message "Failed to start table maintenance job. Error: $errorDetails" -Level Error
+        Write-Message -Message "Failed to start Spark Job Definition on demand. Error: $errorDetails" -Level Error
     }
 }

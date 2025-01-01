@@ -1,26 +1,26 @@
 <#
 .SYNOPSIS
-    Updates the definition of an existing SparkJobDefinition in a specified Microsoft Fabric workspace.
+    Updates the definition of an existing SemanticModel in a specified Microsoft Fabric workspace.
 
 .DESCRIPTION
-    This function sends a PATCH request to the Microsoft Fabric API to update the definition of an existing SparkJobDefinition 
-    in the specified workspace. It supports optional parameters for SparkJobDefinition definition and platform-specific definition.
+    This function sends a PATCH request to the Microsoft Fabric API to update the definition of an existing SemanticModel 
+    in the specified workspace. It supports optional parameters for SemanticModel definition and platform-specific definition.
 
 .PARAMETER WorkspaceId
-    The unique identifier of the workspace where the SparkJobDefinition exists. This parameter is mandatory.
+    The unique identifier of the workspace where the SemanticModel exists. This parameter is mandatory.
 
-.PARAMETER SparkJobDefinitionId
-    The unique identifier of the SparkJobDefinition to be updated. This parameter is mandatory.
+.PARAMETER SemanticModelId
+    The unique identifier of the SemanticModel to be updated. This parameter is mandatory.
 
-.PARAMETER SparkJobDefinitionPathDefinition
-    An optional path to the SparkJobDefinition definition file to upload.
+.PARAMETER SemanticModelPathDefinition
+    An optional path to the SemanticModel definition file to upload.
 
-.PARAMETER SparkJobDefinitionPathPlatformDefinition
+.PARAMETER SemanticModelPathPlatformDefinition
     An optional path to the platform-specific definition file to upload.
 
 .EXAMPLE
-    PS C:\> Update-FabricSparkJobDefinitionDefinition -WorkspaceId "workspace-12345" -SparkJobDefinitionId "SparkJobDefinition-67890" -SparkJobDefinitionPathDefinition "C:\Path\To\SparkJobDefinitionDefinition.json"
-    This example updates the definition of the SparkJobDefinition with ID "SparkJobDefinition-67890" in the workspace with ID "workspace-12345" using the provided definition file.
+    PS C:\> Update-FabricSemanticModelDefinition -WorkspaceId "workspace-12345" -SemanticModelId "SemanticModel-67890" -SemanticModelPathDefinition "C:\Path\To\SemanticModelDefinition.json"
+    This example updates the definition of the SemanticModel with ID "SemanticModel-67890" in the workspace with ID "workspace-12345" using the provided definition file.
 
 .NOTES
     - Requires `$FabricConfig` global configuration, including `BaseUrl` and `FabricHeaders`.
@@ -29,7 +29,7 @@
     Author: Tiago Balabuch
     Date: 2024-12-15
 #>
-function Update-FabricSparkJobDefinitionDefinition {
+function Update-FabricSemanticModelDefinition {
     [CmdletBinding()]
     param (
         [Parameter(Mandatory = $true)]
@@ -38,15 +38,11 @@ function Update-FabricSparkJobDefinitionDefinition {
 
         [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
-        [string]$SparkJobDefinitionId,
+        [string]$SemanticModelId,
 
         [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
-        [string]$SparkJobDefinitionPathDefinition,
-        
-        [Parameter(Mandatory = $false)]
-        [ValidateNotNullOrEmpty()]
-        [string]$SparkJobDefinitionPathPlatformDefinition
+        [string]$SemanticModelPathDefinition
     )
     try {
         # Step 1: Ensure token validity
@@ -55,54 +51,34 @@ function Update-FabricSparkJobDefinitionDefinition {
         Write-Message -Message "Token validation completed." -Level Debug
 
         # Step 2: Construct the API URL
-        $apiEndpointUrl = "{0}/workspaces/{1}/SparkJobDefinitions/{2}/updateDefinition" -f $FabricConfig.BaseUrl, $WorkspaceId, $SparkJobDefinitionId
+        $apiEndpointUrl = "{0}/workspaces/{1}/SemanticModels/{2}/updateDefinition" -f $FabricConfig.BaseUrl, $WorkspaceId, $SemanticModelId
 
         #if ($UpdateMetadata -eq $true) {
-        if($SparkJobDefinitionPathPlatformDefinition){
-            $apiEndpointUrl = "?updateMetadata=true" -f $apiEndpointUrl 
-        }
-        Write-Message -Message "API Endpoint: $apiEndpointUrl" -Level Debug
+
 
         # Step 3: Construct the request body
         $body = @{
             definition = @{
-                format = "SparkJobDefinitionV1"
                 parts  = @()
             } 
         }
       
-        if ($SparkJobDefinitionPathDefinition) {
-            $SparkJobDefinitionEncodedContent = Encode-ToBase64 -filePath $SparkJobDefinitionPathDefinition
-            
-            if (-not [string]::IsNullOrEmpty($SparkJobDefinitionEncodedContent)) {
-                # Add new part to the parts array
-                $body.definition.parts += @{
-                    path        = "SparkJobDefinitionV1.json"
-                    payload     = $SparkJobDefinitionEncodedContent
-                    payloadType = "InlineBase64"
-                }
-            }
-            else {
-                Write-Message -Message "Invalid or empty content in SparkJobDefinition definition." -Level Error
-                return $null
+            $jsonObjectParts = Get-FileDefinitionParts -sourceDirectory $SemanticModelPathDefinition
+            # Add new part to the parts array
+            $body.definition.parts = $jsonObjectParts.parts
+        # Check if any path is .platform
+        foreach ($part in $jsonObjectParts.parts) {
+            if ($part.path -eq ".platform") {
+                $hasPlatformFile = $true
+                Write-Message -Message "Platform File: $hasPlatformFile" -Level Debug
             }
         }
 
-        if ($SparkJobDefinitionPathPlatformDefinition) {
-            $SparkJobDefinitionEncodedPlatformContent = Encode-ToBase64 -filePath $SparkJobDefinitionPathPlatformDefinition
-            if (-not [string]::IsNullOrEmpty($SparkJobDefinitionEncodedPlatformContent)) {
-                # Add new part to the parts array
-                $body.definition.parts += @{
-                    path        = ".platform"
-                    payload     = $SparkJobDefinitionEncodedPlatformContent
-                    payloadType = "InlineBase64"
-                }
-            }
-            else {
-                Write-Message -Message "Invalid or empty content in platform definition." -Level Error
-                return $null
-            }
+        if($hasPlatformFile -eq $true) {
+            $apiEndpointUrl = "?updateMetadata=true" -f $apiEndpointUrl 
         }
+        Write-Message -Message "API Endpoint: $apiEndpointUrl" -Level Debug
+
 
         $bodyJson = $body | ConvertTo-Json -Depth 10
         Write-Message -Message "Request Body: $bodyJson" -Level Debug
@@ -121,11 +97,11 @@ function Update-FabricSparkJobDefinitionDefinition {
         # Step 5: Handle and log the response
         switch ($statusCode) {
             200 {
-                Write-Message -Message "Update definition for Spark Job Definition '$SparkJobDefinitionId' created successfully!" -Level Info
+                Write-Message -Message "Update definition for SemanticModel '$SemanticModelId' created successfully!" -Level Info
                 return $response
             }
             202 {
-                Write-Message -Message "Update definition for Spark Job Definition '$SparkJobDefinitionId' accepted. Operation in progress!" -Level Info
+                Write-Message -Message "Update definition for SemanticModel '$SemanticModelId' accepted. Operation in progress!" -Level Info
                 
                 [string]$operationId = $responseHeader["x-ms-operation-id"]
                 [string]$location = $responseHeader["Location"]
@@ -163,6 +139,6 @@ function Update-FabricSparkJobDefinitionDefinition {
     catch {
         # Step 6: Handle and log errors
         $errorDetails = $_.Exception.Message
-        Write-Message -Message "Failed to update Spark Job Definition. Error: $errorDetails" -Level Error
+        Write-Message -Message "Failed to update SemanticModel. Error: $errorDetails" -Level Error
     }
 }
