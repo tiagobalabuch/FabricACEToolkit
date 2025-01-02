@@ -16,14 +16,8 @@
 .PARAMETER DataPipelineDescription
     An optional description for the DataPipeline.
 
-.PARAMETER DataPipelinePathDefinition
-    An optional path to the DataPipeline definition file (e.g., .ipynb file) to upload.
-
-.PARAMETER DataPipelinePathPlatformDefinition
-    An optional path to the platform-specific definition (e.g., .platform file) to upload.
-
 .EXAMPLE
-    PS C:\> New-FabricDataPipeline -WorkspaceId "workspace-12345" -DataPipelineName "New DataPipeline" -DataPipelinePathDefinition "C:\DataPipelines\example.ipynb"
+    PS C:\> New-FabricDataPipeline -WorkspaceId "workspace-12345" -DataPipelineName "New DataPipeline" 
     This example creates a new DataPipeline named "New DataPipeline" in the workspace with ID "workspace-12345" and uploads the definition file from the specified path.
 
 .NOTES

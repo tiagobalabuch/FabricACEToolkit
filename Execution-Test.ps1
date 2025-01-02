@@ -15,15 +15,54 @@ New-FabricNotebookNEW `
 -NotebookPathDefinition "C:\temp\API\Notebook"`
 -Debug
 
+$apiEndpointUrl = "https://api.fabric.microsoft.com/v1/workspaces/26cbd4ed-5920-4f2b-94ab-8e6ffbbdc48d/dashboards"
+
+Invoke-RestMethod `
+-Headers $FabricConfig.FabricHeaders `
+-Uri $apiEndpointUrl `
+-Method Get `
+-ErrorAction Stop `
+-SkipHttpErrorCheck `
+-ResponseHeadersVariable "responseHeader" `
+-StatusCodeVariable "statusCode"
 
 #################################################################
 # Capacity
 Get-FabricCapacity -Debug 
 Get-FabricCapacity -capacityId "6b3297a9-84d0-4f51-99ac-76dda2572ba4"
 Get-FabricCapacity -capacityName "tiagocapacity"
-New-FabricWorkspace -WorkspaceName "Tiago API"
+###################################################################
+# Dashboard
+$workspace = Get-FabricWorkspace -WorkspaceName "Tiago API"
+Get-FabricDashboard -WorkspaceId $workspace.id -Debug 
+###################################################################
+# Data Pipeline
+## Get Data Pipeline
+$workspace = Get-FabricWorkspace -WorkspaceName "Tiago API"
+Get-FabricDataPipeline -WorkspaceId $workspace.id -Debug
+
+## Add Data Pipeline
+$workspace = Get-FabricWorkspace -WorkspaceName "Tiago API"
+New-FabricDataPipeline -WorkspaceId $workspace.id -DataPipelineName "DataPipeline1" -DataPipelineDescription "Data Pipeline Description" -Debug
+
+## Update Data Pipeline
+$workspace = Get-FabricWorkspace -WorkspaceName "Tiago API"
+$dataPipeline = Get-FabricDataPipeline -WorkspaceId $workspace.id -DataPipelineName "DataPipeline1"
+Update-FabricDataPipeline -WorkspaceId $workspace.id -DataPipelineId $dataPipeline.id -DataPipelineName "DataPipeline1 Updated" -DataPipelineDescription "Data Pipeline Description Updated" -Debug
+
+## Remove Data Pipeline
+$workspace = Get-FabricWorkspace -WorkspaceName "Tiago API"
+$dataPipeline = Get-FabricDataPipeline -WorkspaceId $workspace.id -DataPipelineName "DataPipeline1 Updated"
+Remove-FabricDataPipeline -WorkspaceId $workspace.id -DataPipelineId $dataPipeline.id -Debug
 
 ###################################################################
+# Datamart
+## Get Datamart
+$workspace = Get-FabricWorkspace -WorkspaceName "Tiago API"
+Get-FabricDatamart -WorkspaceId $workspace.id -Debug
+
+
+
 # Workspace
 ## Get Workspace
 Get-FabricWorkspace -Debug
