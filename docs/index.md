@@ -45,25 +45,25 @@ Set-FabricHeaders -tenantId "xxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxx"
 ## Public Functions
 
 ### Set-FabricHeaders 
-[Set-FabricHeaders.ps1](/docs/Set-FabricHeaders.md)
+[Set-FabricHeaders.ps1](Set-FabricHeaders.md)
 
 
 ### Capacity
-- [Get-FabricCapacity.ps1](/docs/Get-FabricCapacity.md)
+- [Get-FabricCapacity.ps1](Get-FabricCapacity.md)
 
 ### Dashboard
-- [Get-FabricDashboard.ps1](/docs/Get-FabricDashboard.md)
+- [Get-FabricDashboard.ps1](Get-FabricDashboard.md)
 
 ### Data Pipeline
-- [Get-FabricDataPipeline.ps1](/docs/Get-FabricDataPipeline.md)
-- [New-FabricDataPipeline.ps1](/docs/New-FabricDataPipeline.md)
-- [Remove-FabricDataPipelines.ps1](/docs/Remove-FabricDataPipeline.md)
-- [Update-FabricNotebook.ps1](/docs/Update-FabricDataPipeline.md)
+- [Get-FabricDataPipeline.ps1](Get-FabricDataPipeline.md)
+- [New-FabricDataPipeline.ps1](New-FabricDataPipeline.md)
+- [Remove-FabricDataPipelines.ps1](Remove-FabricDataPipeline.md)
+- [Update-FabricNotebook.ps1](Update-FabricDataPipeline.md)
 ### Datamart
-- [Get-FabricDatamart.ps1](/docs/Get-FabricDatamart.md)
+- [Get-FabricDatamart.ps1](Get-FabricDatamart.md)
 
 ### Domain
-- [Assign-FabricDomainWorkspaceByCapacity.ps1](/docs/Assign-FabricDomainWorkspaceByCapacity.md)
+- [Assign-FabricDomainWorkspaceByCapacity.ps1](Assign-FabricDomainWorkspaceByCapacity.md)
 - `Assign-FabricDomainWorkspaceById.ps1`
 - `Assign-FabricDomainWorkspaceByPrincipal.ps1`
 - `Assign-FabricDomainWorkspaceRoleAssignment.ps1`
