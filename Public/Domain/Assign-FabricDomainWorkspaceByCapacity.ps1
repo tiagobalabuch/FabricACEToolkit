@@ -76,7 +76,14 @@ function Assign-FabricDomainWorkspaceByCapacity {
             202 {
                 Write-Message -Message "Assigning domain workspaces by capacity is in progress for domain '$DomainId'." -Level Info
                 [string]$operationId = $responseHeader["x-ms-operation-id"]
+
+                [string]$operationId = $responseHeader["x-ms-operation-id"]
+                [string]$location = $responseHeader["Location"]
+                [string]$retryAfter = $responseHeader["Retry-After"] 
+
                 Write-Message -Message "Operation ID: '$operationId'" -Level Debug
+                Write-Message -Message "Location: '$location'" -Level Debug
+                Write-Message -Message "Retry-After: '$retryAfter'" -Level Debug
                 Write-Message -Message "Getting Long Running Operation status" -Level Debug
                
                 $operationStatus = Get-FabricLongRunningOperation -operationId $operationId
@@ -84,12 +91,7 @@ function Assign-FabricDomainWorkspaceByCapacity {
                 # Handle operation result
                 if ($operationStatus.status -eq "Succeeded") {
                     Write-Message -Message "Operation Succeeded" -Level Debug
-                    Write-Message -Message "Getting Long Running Operation result" -Level Debug
-                
-                    $operationResult = Get-FabricLongRunningOperationResult -operationId $operationId
-                    Write-Message -Message "Long Running Operation status: $operationResult" -Level Debug
-                
-                    return $operationResult
+                    return $operationStatus
                 }
             }
             default {

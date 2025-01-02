@@ -7,17 +7,12 @@ Set-FabricHeaders -tenantId "2ca1a04f-621b-4a1f-bad6-7ecd3ae78e25"
 
 $a = Get-Command -Module FabricACEToolkit 
 $a.Count
-$workspace = Get-FabricWorkspace -WorkspaceName "Tiago API"
-New-FabricNotebookNEW `
--WorkspaceId $workspace.id `
--NotebookName "NewTest0000000001" `
--NotebookDescription "Notebook Description" `
--NotebookPathDefinition "C:\temp\API\Notebook"`
--Debug
 
-$apiEndpointUrl = "https://api.fabric.microsoft.com/v1/workspaces/26cbd4ed-5920-4f2b-94ab-8e6ffbbdc48d/dashboards"
+Assign-FabricDomainWorkspaceByPrincipal -DomainId $domain.id -PrincipalIds $PrincipalIds -Debug
 
-Invoke-RestMethod `
+$apiEndpointUrl = "https://api.fabric.microsoft.com/v1/operations/d90fdb4a-2dbf-44f5-9239-85d7e83aa076/result"
+
+$response = Invoke-RestMethod `
 -Headers $FabricConfig.FabricHeaders `
 -Uri $apiEndpointUrl `
 -Method Get `
@@ -25,6 +20,8 @@ Invoke-RestMethod `
 -SkipHttpErrorCheck `
 -ResponseHeadersVariable "responseHeader" `
 -StatusCodeVariable "statusCode"
+
+
 
 #################################################################
 # Capacity
@@ -60,6 +57,69 @@ Remove-FabricDataPipeline -WorkspaceId $workspace.id -DataPipelineId $dataPipeli
 ## Get Datamart
 $workspace = Get-FabricWorkspace -WorkspaceName "Tiago API"
 Get-FabricDatamart -WorkspaceId $workspace.id -Debug
+
+###################################################################
+# Domain
+## Add Domain
+
+New-FabricDomain -DomainName "API1" 
+New-FabricDomain -DomainName "API2" -DomainDescription "API data domain"
+New-FabricDomain -DomainName "API3" -DomainDescription "API data domain" -ParentDomainId "227cf69a-85df-4e55-9191-186a3de2c501"
+New-FabricDomain -DomainName "API4" -ParentDomainId "227cf69a-85df-4e55-9191-186a3de2c501"
+
+## Get Domain
+Get-FabricDomain 
+Get-FabricDomain -DomainId "227cf69a-85df-4e55-9191-186a3de2c501"
+Get-FabricDomain -DomainName "API1"
+
+## Update Domain
+$domain = Get-FabricDomain -DomainName "API4"
+Update-FabricDomain -DomainId $domain.id -DomainName "API Updated" -DomainDescription "API data domain updated"
+
+## Remove Domain
+$domain = Get-FabricDomain -DomainName "API Updated"
+Remove-FabricDomain -DomainId $domain.id
+
+# Assign domain workspace by Capacity
+$capacity = Get-FabricCapacity 
+$domain = Get-FabricDomain -DomainName "API3"
+Assign-FabricDomainWorkspaceByCapacity -DomainId $domain.id -capacitiesIds $capacity.id -Debug
+
+# Assign domain workspace by Id
+$workspace = Get-FabricWorkspace
+$workspace[0] = $null # Removing My Workspace
+Assign-FabricDomainWorkspaceById -DomainId $domain.id -WorkspaceId $workspace.id -Debug
+
+## Get Domain Workspace
+$domain = Get-FabricDomain -DomainName "API3"
+Get-FabricDomainWorkspace -DomainId $domain.id
+
+## Remove Domain Workspace
+$workspace = Get-FabricWorkspace
+$workspace[0] = $null # Removing My Workspace
+$domain = Get-FabricDomain -DomainName "API3"
+Unassign-FabricDomainWorkspace -DomainId $domain.id -WorkspaceIds $workspace.id -Debug
+
+## Assign domain workspace by Principal
+$PrincipalIds = @( @{id = "813abb4a-414c-4ac0-9c2c-bd17036fd58c"; type = "User" },
+    @{id = "b5b9495c-685a-447a-b4d3-2d8e963e6288"; type = "User" })
+
+$domain = Get-FabricDomain -DomainName "API1"
+Assign-FabricDomainWorkspaceByPrincipal -DomainId $domain.id -PrincipalIds $PrincipalIds -Debug
+
+## Assign domain workspace by Capacity
+$domain = Get-FabricDomain -DomainName "API1"
+$PrincipalIds = @( @{id = "813abb4a-414c-4ac0-9c2c-bd17036fd58c"; type = "User" },
+    @{id = "b5b9495c-685a-447a-b4d3-2d8e963e6288"; type = "User" })
+Assign-FabricDomainWorkspaceRoleAssignment -DomainId $domain.id -DomainRole Contributors -PrincipalIds $PrincipalIds -Debug
+
+## Unassign domain workspace by Principal
+$domain = Get-FabricDomain -DomainName "API1"
+$PrincipalIds = @( @{id = "813abb4a-414c-4ac0-9c2c-bd17036fd58c"; type = "User" },
+    @{id = "b5b9495c-685a-447a-b4d3-2d8e963e6288"; type = "User" })
+Unassign-FabricDomainWorkspaceRoleAssignment -DomainId $domain.id -DomainRole Admins -PrincipalIds $PrincipalIds -Debug
+
+###################################################################
 
 
 
