@@ -97,12 +97,11 @@ function Assign-FabricDomainWorkspaceByPrincipal {
                 # Handle operation result
                 if ($operationStatus.status -eq "Succeeded") {
                     Write-Message -Message "Operation Succeeded" -Level Debug
-                    Write-Message -Message "Getting Long Running Operation result" -Level Debug
-                
-                    $operationResult = Get-FabricLongRunningOperationResult -operationId $operationId
-                    Write-Message -Message "Long Running Operation status: $operationResult" -Level Debug
-                
-                    return $operationResult
+                    return $operationStatus
+                }
+                else {
+                    Write-Message -Message "Operation failed with status: $($operationStatus.status)" -Level Error
+                    return operationStatus
                 }
             }
             default {
