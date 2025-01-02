@@ -100,7 +100,7 @@ function Get-FabricDatamart {
 
         # Step 9: Handle results
         Write-Message -Message "Returning all Datamarts." -Level Debug
-        return $Datamart
+        return $Datamarts
 
     }
     catch {

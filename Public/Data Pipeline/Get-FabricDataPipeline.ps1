@@ -1,24 +1,33 @@
 <#
 .SYNOPSIS
-    Retrieves data pipelines from a specified workspace.
+    Retrieves data pipelines from a specified Microsoft Fabric workspace.
 
 .DESCRIPTION
-    This function retrieves all data pipelines from a specified workspace using the provided WorkspaceId.
+    This function retrieves all data pipelines from a specified workspace using either the provided Data PipelineId or Data PipelineName.
     It handles token validation, constructs the API URL, makes the API request, and processes the response.
 
 .PARAMETER WorkspaceId
-    The ID of the workspace from which to retrieve data pipelines. This parameter is mandatory.
+    The unique identifier of the workspace where the Data Pipeline exists. This parameter is mandatory.
+
+.PARAMETER Data PipelineId
+    The unique identifier of the Data Pipeline to retrieve. This parameter is optional.
+
+.PARAMETER Data PipelineName
+    The name of the Data Pipeline to retrieve. This parameter is optional.
 
 .EXAMPLE
-    PS C:\> Get-FabricDataPipeline -WorkspaceId "12345"
-    This example retrieves all data pipelines from the workspace with ID "12345".
+    PS C:\> Get-FabricData Pipeline -WorkspaceId "workspace-12345" -Data PipelineId "Data Pipeline-67890"
+    This example retrieves the Data Pipeline details for the Data Pipeline with ID "Data Pipeline-67890" in the workspace with ID "workspace-12345".
+
+.EXAMPLE
+    PS C:\> Get-FabricData Pipeline -WorkspaceId "workspace-12345" -Data PipelineName "My Data Pipeline"
+    This example retrieves the Data Pipeline details for the Data Pipeline named "My Data Pipeline" in the workspace with ID "workspace-12345".
 
 .NOTES
     - Requires `$FabricConfig` global configuration, including `BaseUrl` and `FabricHeaders`.
     - Calls `Test-TokenExpired` to ensure token validity before making the API request.
 
     Author: Tiago Balabuch
-    Date: 2024-12-15
 #>
 function Get-FabricDataPipeline {
     [CmdletBinding()]

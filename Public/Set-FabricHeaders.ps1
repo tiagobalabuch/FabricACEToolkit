@@ -17,7 +17,6 @@ Logs in to Azure with the specified tenant ID, retrieves an access token, and co
 .NOTES
 - Ensure the `Connect-AzAccount` and `Get-AzAccessToken` commands are available (Azure PowerShell module required).
 - Relies on a global `$FabricConfig` object for storing headers and token metadata.
-- Use the function `Is-TokenExpired` to check the token validity later.
 
 .AUTHOR
 Your Name

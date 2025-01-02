@@ -26,7 +26,6 @@
     - Calls `Test-TokenExpired` to ensure token validity before making the API request.
 
     Author: Tiago Balabuch
-    Date: 2024-12-15
 #>
 function Get-FabricCapacity {
     [CmdletBinding()]

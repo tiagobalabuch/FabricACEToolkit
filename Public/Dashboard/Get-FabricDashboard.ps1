@@ -14,11 +14,10 @@
     This example retrieves all dashboards from the workspace with ID "12345".
 
 .NOTES
-- Requires `$FabricConfig` global configuration, including `BaseUrl` and `FabricHeaders`.
-- Calls `Test-TokenExpired` to ensure token validity before making the API request.
+    - Requires `$FabricConfig` global configuration, including `BaseUrl` and `FabricHeaders`.
+    - Calls `Test-TokenExpired` to ensure token validity before making the API request.
 
-Author: Tiago Balabuch  
-Date: 2024-12-15
+    Author: Tiago Balabuch  
 #>
 
 function Get-FabricDashboard {
@@ -101,7 +100,7 @@ function Get-FabricDashboard {
 
         # Step 9: Handle results
         Write-Message -Message "Returning all Dashboards." -Level Debug
-        return $Dashboard
+        return $Dashboards
 
     }
     catch {
